@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, useConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { useLogoutAll } from "@/features/auth/hooks/useAuthMutations";
@@ -24,16 +24,17 @@ export function SecuritySettings() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Security</CardTitle>
-        <CardDescription>Signs this account out everywhere, including other browsers and devices.</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
+        <div>
+          <p className="text-sm font-medium">Log out of all devices</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">Signs this account out everywhere, including other browsers and devices.</p>
+        </div>
         <Button variant="outline" onClick={confirm.show}>
+          <LogOut className="h-4 w-4" />
           Log Out of All Devices
         </Button>
-      </CardContent>
+      </div>
       <ConfirmDialog
         open={confirm.open}
         onOpenChange={confirm.onOpenChange}
@@ -44,6 +45,6 @@ export function SecuritySettings() {
         isConfirming={logoutAll.isPending}
         onConfirm={handleConfirm}
       />
-    </Card>
+    </>
   );
 }

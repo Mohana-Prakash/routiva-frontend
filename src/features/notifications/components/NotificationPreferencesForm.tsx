@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -36,11 +35,12 @@ export function NotificationPreferencesForm() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Notification Preferences</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-5">
+    <div className="space-y-5">
+      <div>
+        <p className="text-sm font-medium">Preferences</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">Fine-tune when and how reminders reach you.</p>
+      </div>
+      <div className="space-y-5 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <div>
             <Label htmlFor="push-enabled">Notifications enabled</Label>
@@ -90,7 +90,7 @@ export function NotificationPreferencesForm() {
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

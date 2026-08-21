@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Monitor, Moon, Sun } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 const OPTIONS = [
@@ -20,34 +19,27 @@ export function AppearanceSettings() {
   useEffect(() => setMounted(true), []);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Appearance</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div role="radiogroup" aria-label="Theme" className="grid grid-cols-3 gap-2">
-          {OPTIONS.map((option) => {
-            const Icon = option.icon;
-            const selected = mounted && theme === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => setTheme(option.value)}
-                className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs font-medium transition-colors hover:bg-muted",
-                  selected ? "border-primary bg-primary/5 text-primary" : "text-muted-foreground",
-                )}
-              >
-                <Icon className="h-4 w-4" aria-hidden="true" />
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+    <div role="radiogroup" aria-label="Theme" className="grid grid-cols-3 gap-3">
+      {OPTIONS.map((option) => {
+        const Icon = option.icon;
+        const selected = mounted && theme === option.value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => setTheme(option.value)}
+            className={cn(
+              "flex flex-col items-center gap-2 rounded-lg border p-4 text-sm font-medium transition-colors hover:bg-muted",
+              selected ? "border-primary bg-primary/5 text-primary ring-1 ring-primary" : "text-muted-foreground",
+            )}
+          >
+            <Icon className="h-5 w-5" aria-hidden="true" />
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
