@@ -11,11 +11,6 @@ import { NotificationPreferencesForm } from "@/features/notifications/components
 export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-6">
-      <div>
-        <h1 className="font-heading text-2xl font-semibold">Settings</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Manage your profile, reminders, and how the app looks.</p>
-      </div>
-
       <SettingsSection id="profile" icon={User} title="Profile" description="Your name, email, and timezone.">
         <ProfileForm />
       </SettingsSection>
