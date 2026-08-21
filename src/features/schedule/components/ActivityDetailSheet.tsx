@@ -18,6 +18,7 @@ import {
 } from "@/components/shared/ConfirmDialog";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
 import {
+  combineDateAndTime,
   formatDateLabel,
   formatDurationMinutes,
   formatIsoToTime,
@@ -38,6 +39,7 @@ import { getTimelineDisplayStatus } from "../lib/timelineStatus";
 import { TIMELINE_STATUS_PRESENTATION } from "./timelineStatusPresentation";
 import { AdjustTimeSection } from "./AdjustTimeSection";
 import { CorrectActualTimingSection } from "./CorrectActualTimingSection";
+import { useNow } from "@/hooks/useNow";
 import type { ScheduleDayItem } from "@/types/schedule";
 
 interface ActivityDetailSheetProps {
@@ -65,6 +67,7 @@ export function ActivityDetailSheet({
   const skipActivity = useSkipActivity();
   const createException = useCreateScheduleException();
   const deleteException = useDeleteScheduleException();
+  const now = useNow();
 
   if (!item) return null;
 
@@ -108,8 +111,15 @@ export function ActivityDetailSheet({
     startActivity.isPending ||
     completeActivity.isPending ||
     skipActivity.isPending;
+  // Same time gate as the timeline row: Start/Complete only once the scheduled
+  // time has actually arrived. Skip is exempt.
+  const timeHasArrived =
+    combineDateAndTime(item.date, item.startTime, timezone).getTime() <=
+    now.getTime();
+  const canStart = log?.status === "PLANNED" && timeHasArrived;
   const canComplete =
-    log?.status === "IN_PROGRESS" || log?.status === "PLANNED";
+    log?.status === "IN_PROGRESS" ||
+    (log?.status === "PLANNED" && timeHasArrived);
   const canSkip = log?.status === "PLANNED" || log?.status === "IN_PROGRESS";
 
   return (
@@ -173,9 +183,9 @@ export function ActivityDetailSheet({
               </div>
             )}
 
-            {(log?.status === "PLANNED" || canComplete || canSkip) && (
+            {(canStart || canComplete || canSkip) && (
               <div className="flex flex-wrap gap-2">
-                {log?.status === "PLANNED" && (
+                {canStart && log && (
                   <Button
                     size="sm"
                     variant="outline"

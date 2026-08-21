@@ -109,7 +109,7 @@ export function ScheduleEntryList() {
                     <p className="truncate text-sm font-medium">
                       {activity?.name ?? "Unknown activity"}
                     </p>
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                       {category && (
                         <CategoryBadge
                           name={category.name}

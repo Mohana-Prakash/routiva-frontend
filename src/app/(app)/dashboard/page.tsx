@@ -15,7 +15,7 @@ import { useTodaySchedule } from "@/features/schedule/hooks/useDaySchedule";
 import { computeDailySummary } from "@/features/schedule/lib/computeDailySummary";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useNow } from "@/hooks/useNow";
-import { nowTimeInTimeZone, minutesUntil } from "@/lib/datetime/time";
+import { nowTimeInTimeZone, minutesUntil, todayInTimeZone } from "@/lib/datetime/time";
 
 export default function DashboardPage() {
   return (

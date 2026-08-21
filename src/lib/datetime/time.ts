@@ -1,4 +1,4 @@
-import { formatInTimeZone, toZonedTime } from "date-fns-tz";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { format, parseISO } from "date-fns";
 
 /** "HH:mm" in 24-hour time, per frontend-requirements 01 §3.4. */
@@ -14,9 +14,16 @@ export function nowTimeInTimeZone(timezone: string): TimeString {
   return formatInTimeZone(new Date(), timezone, "HH:mm");
 }
 
-/** Combines a date + "HH:mm" into the corresponding instant in the given IANA timezone. */
+/**
+ * Combines a date + "HH:mm" into the correct UTC instant for that wall-clock
+ * moment in the given IANA timezone. Uses `fromZonedTime` deliberately —
+ * `toZonedTime` does the opposite conversion (UTC instant -> wall-clock display)
+ * and would silently depend on the runtime's local system timezone when parsing
+ * the plain (offset-less) date-time string, producing a wrong instant on any
+ * machine whose local timezone isn't UTC.
+ */
 export function combineDateAndTime(date: DateString, time: TimeString, timezone: string): Date {
-  return toZonedTime(`${date}T${time}:00`, timezone);
+  return fromZonedTime(`${date}T${time}:00`, timezone);
 }
 
 export function formatIsoToTime(iso: string, timezone: string): TimeString {

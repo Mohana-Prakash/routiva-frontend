@@ -14,6 +14,7 @@ import {
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useNow } from "@/hooks/useNow";
 import type { ScheduleDayItem } from "@/types/schedule";
 
 interface TimelineItemProps {
@@ -41,6 +42,7 @@ export function TimelineItem({
   const startActivity = useStartActivity();
   const completeActivity = useCompleteActivity();
   const skipActivity = useSkipActivity();
+  const now = useNow();
 
   function handleAction(action: "start" | "complete" | "skip") {
     if (!item.activityLog) return;
@@ -63,7 +65,7 @@ export function TimelineItem({
   // actually arrived — you can't log time for something that hasn't happened yet.
   // Skip is exempt: you can always skip ahead, planned or not.
   const timeHasArrived =
-    combineDateAndTime(date, item.startTime, timezone).getTime() <= Date.now();
+    combineDateAndTime(date, item.startTime, timezone).getTime() <= now.getTime();
   // Planned items can be started, or completed directly for quick one-tap tracking
   // (frontend-requirements 03 §10) — actual timing may legitimately differ from plan.
   const canStart = logStatus === "PLANNED" && timeHasArrived;
@@ -73,7 +75,7 @@ export function TimelineItem({
 
   return (
     <li className="flex gap-3 py-2">
-      <div className="w-14 shrink-0 pt-2 text-right text-xs text-muted-foreground mt-1 tabular-nums">
+      <div className="w-14 shrink-0 pt-2 text-right text-xs text-muted-foreground tabular-nums">
         <div>{item.startTime}</div>
         <div>{item.endTime}</div>
       </div>
@@ -131,7 +133,7 @@ export function TimelineItem({
         </div>
 
         {item.activityLog?.actualStart && item.activityLog?.actualEnd && (
-          <p className="mt-1.5 text-xs text-muted-foreground mt-1">
+          <p className="mt-1.5 text-xs text-muted-foreground">
             Actual:{" "}
             {formatActualRange(
               item.activityLog.actualStart,

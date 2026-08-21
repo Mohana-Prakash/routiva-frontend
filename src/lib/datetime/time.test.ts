@@ -1,5 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { formatDurationMinutes, isTimeNowWithinRange, isValidTimeString, minutesBetween, minutesUntil, timeRangesOverlap } from "./time";
+import {
+  combineDateAndTime,
+  formatDurationMinutes,
+  isTimeNowWithinRange,
+  isValidTimeString,
+  minutesBetween,
+  minutesUntil,
+  timeRangesOverlap,
+} from "./time";
+
+describe("combineDateAndTime", () => {
+  it("produces the correct UTC instant for a wall-clock time in a zone ahead of UTC", () => {
+    // 18:00 in Asia/Kolkata (UTC+5:30) is 12:30 UTC.
+    const result = combineDateAndTime("2026-08-21", "18:00", "Asia/Kolkata");
+    expect(result.toISOString()).toBe("2026-08-21T12:30:00.000Z");
+  });
+
+  it("produces the correct UTC instant for a wall-clock time in a zone behind UTC", () => {
+    // 09:00 in America/New_York (UTC-4 in August, DST) is 13:00 UTC.
+    const result = combineDateAndTime("2026-08-21", "09:00", "America/New_York");
+    expect(result.toISOString()).toBe("2026-08-21T13:00:00.000Z");
+  });
+
+  it("is a no-op shift for UTC itself", () => {
+    const result = combineDateAndTime("2026-08-21", "18:00", "UTC");
+    expect(result.toISOString()).toBe("2026-08-21T18:00:00.000Z");
+  });
+});
 
 describe("minutesBetween", () => {
   it("computes a same-day duration", () => {

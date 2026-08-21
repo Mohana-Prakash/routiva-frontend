@@ -14,9 +14,16 @@ vi.mock("@/lib/api/tracking", () => ({
   },
 }));
 
+// Start/Complete are gated on the `date`/startTime passed to TimelineItem having
+// already arrived relative to the real wall clock. Using a fixed past/future date
+// (rather than mocking the clock) keeps these tests deterministic without fighting
+// userEvent's own timers.
+const PAST_DATE = "2020-01-01";
+const FUTURE_DATE = "2099-01-01";
+
 const plannedItem: ScheduleDayItem = {
   id: "item-1",
-  date: "2026-08-21",
+  date: PAST_DATE,
   activityId: "a1",
   activityName: "Meditation",
   categoryId: "c1",
@@ -39,7 +46,7 @@ const plannedItem: ScheduleDayItem = {
     activityId: "a1",
     scheduleEntryId: "se1",
     exceptionId: null,
-    activityDate: "2026-08-21",
+    activityDate: PAST_DATE,
     plannedStart: null,
     plannedEnd: null,
     actualStart: null,
@@ -61,7 +68,9 @@ describe("TimelineItem", () => {
 
   it("shows Start/Complete/Skip for a planned activity and calls the right API on each", async () => {
     const user = userEvent.setup();
-    renderWithQueryClient(<TimelineItem item={plannedItem} nowTime="18:15" onSelect={() => {}} />);
+    renderWithQueryClient(
+      <TimelineItem item={plannedItem} nowTime="18:15" date={PAST_DATE} timezone="UTC" onSelect={() => {}} />,
+    );
 
     expect(screen.getByText("Meditation")).toBeInTheDocument();
 
@@ -75,7 +84,9 @@ describe("TimelineItem", () => {
   it("calls onSelect with the item when the card body is activated, not when an action button is clicked", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
-    renderWithQueryClient(<TimelineItem item={plannedItem} nowTime="18:15" onSelect={onSelect} />);
+    renderWithQueryClient(
+      <TimelineItem item={plannedItem} nowTime="18:15" date={PAST_DATE} timezone="UTC" onSelect={onSelect} />,
+    );
 
     await user.click(screen.getByRole("button", { name: "Skip" }));
     expect(onSelect).not.toHaveBeenCalled();
@@ -90,14 +101,27 @@ describe("TimelineItem", () => {
       activityLog: {
         ...plannedItem.activityLog!,
         status: "COMPLETED",
-        actualStart: "2026-08-21T18:02:00Z",
-        actualEnd: "2026-08-21T18:29:00Z",
+        actualStart: "2020-01-01T18:02:00Z",
+        actualEnd: "2020-01-01T18:29:00Z",
       },
     };
-    renderWithQueryClient(<TimelineItem item={completedItem} nowTime="19:00" onSelect={() => {}} />);
+    renderWithQueryClient(
+      <TimelineItem item={completedItem} nowTime="19:00" date={PAST_DATE} timezone="UTC" onSelect={() => {}} />,
+    );
 
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
     expect(screen.getByText(/Actual: 27m/)).toBeInTheDocument();
+  });
+
+  it("hides Start and Complete until the scheduled time arrives, but keeps Skip available", () => {
+    const futureItem: ScheduleDayItem = { ...plannedItem, date: FUTURE_DATE };
+    renderWithQueryClient(
+      <TimelineItem item={futureItem} nowTime="18:15" date={FUTURE_DATE} timezone="UTC" onSelect={() => {}} />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Skip" })).toBeInTheDocument();
   });
 });
