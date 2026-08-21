@@ -2,7 +2,8 @@ import { httpClient } from "./client";
 import type { Activity, CreateActivityInput, UpdateActivityInput } from "@/types/activity";
 
 export const activitiesApi = {
-  list: () => httpClient.get<Activity[]>("/activities").then((r) => r.data),
+  /** Includes archived (inactive) activities — see the matching comment in lib/api/categories.ts. */
+  list: () => httpClient.get<Activity[]>("/activities", { params: { includeInactive: true } }).then((r) => r.data),
 
   get: (id: string) => httpClient.get<Activity>(`/activities/${id}`).then((r) => r.data),
 
