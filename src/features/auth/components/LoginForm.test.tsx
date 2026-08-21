@@ -16,6 +16,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/api/auth", () => ({
   authApi: {
     login: vi.fn(),
+    me: vi.fn(),
   },
 }));
 
@@ -23,6 +24,7 @@ describe("LoginForm", () => {
   beforeEach(() => {
     replace.mockClear();
     vi.mocked(authApi.login).mockReset();
+    vi.mocked(authApi.me).mockReset();
   });
 
   it("shows field-level validation errors instead of submitting when empty", async () => {
@@ -39,6 +41,16 @@ describe("LoginForm", () => {
   it("redirects to the dashboard on successful login", async () => {
     vi.mocked(authApi.login).mockResolvedValue({
       user: { id: "u1", name: "Jane", email: "jane@example.com", timezone: "UTC", status: "ACTIVE", createdAt: "", updatedAt: "", lastLoginAt: null },
+    });
+    vi.mocked(authApi.me).mockResolvedValue({
+      id: "u1",
+      name: "Jane",
+      email: "jane@example.com",
+      timezone: "UTC",
+      status: "ACTIVE",
+      createdAt: "",
+      updatedAt: "",
+      lastLoginAt: null,
     });
     const user = userEvent.setup();
     renderWithQueryClient(<LoginForm />);
