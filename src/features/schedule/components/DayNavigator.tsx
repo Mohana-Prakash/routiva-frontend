@@ -13,8 +13,11 @@ interface DayNavigatorProps {
 
 export function DayNavigator({ date, todayDate, onChange }: DayNavigatorProps) {
   function shiftDay(offsetDays: number) {
-    const next = new Date(`${date}T00:00:00`);
-    next.setDate(next.getDate() + offsetDays);
+    // Do the arithmetic entirely in UTC. Parsing `${date}T00:00:00` (no "Z") reads it as
+    // local time, but toISOString() always emits UTC — for any timezone ahead of UTC that
+    // round-trip silently shifts the resulting date (e.g. two days back instead of one).
+    const [year, month, day] = date.split("-").map(Number);
+    const next = new Date(Date.UTC(year, month - 1, day + offsetDays));
     onChange(next.toISOString().slice(0, 10));
   }
 
