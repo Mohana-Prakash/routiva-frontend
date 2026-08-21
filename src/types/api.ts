@@ -13,6 +13,7 @@ export type ApiErrorCode =
   | "SCHEDULE_CONFLICT"
   | "DUPLICATE_RESOURCE"
   | "INVALID_STATE"
+  | "RESOURCE_IN_USE"
   | "RATE_LIMITED"
   | "INTERNAL_ERROR";
 

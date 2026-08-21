@@ -166,7 +166,7 @@ export function ActivityList() {
                         {activity.isActive ? (
                           <>
                             <Archive className="h-4 w-4" aria-hidden="true" />
-                            Archive
+                            Deactivate
                           </>
                         ) : (
                           <>
@@ -207,7 +207,7 @@ export function ActivityList() {
         open={confirm.open}
         onOpenChange={confirm.onOpenChange}
         title={`Delete "${deleting?.name}"?`}
-        description="Existing historical activity records will be preserved."
+        description="This permanently removes the activity. If it's ever been scheduled or tracked, it can't be deleted — deactivate it instead."
         confirmLabel="Delete"
         destructive
         isConfirming={deleteActivity.isPending}

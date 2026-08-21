@@ -15,6 +15,7 @@ const CODE_MESSAGES: Record<ApiErrorCode | "NETWORK_ERROR", string> = {
   SCHEDULE_CONFLICT: "This overlaps with another activity.",
   DUPLICATE_RESOURCE: "That already exists.",
   INVALID_STATE: "That action can't be performed right now. Please refresh and try again.",
+  RESOURCE_IN_USE: "This can't be permanently deleted because it's still in use — deactivate it instead.",
   RATE_LIMITED: "Too many requests. Please wait a moment and try again.",
   INTERNAL_ERROR: "Something went wrong on our end. Please try again.",
   NETWORK_ERROR: "Unable to reach the server. Check your connection and try again.",

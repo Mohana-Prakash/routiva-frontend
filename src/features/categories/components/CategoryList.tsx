@@ -139,7 +139,7 @@ export function CategoryList() {
         open={confirm.open}
         onOpenChange={confirm.onOpenChange}
         title={`Delete "${deleting?.name}"?`}
-        description="Existing historical activity records will be preserved."
+        description="This permanently removes the category. If any activities use it, it can't be deleted — deactivate it instead."
         confirmLabel="Delete"
         destructive
         isConfirming={deleteCategory.isPending}
