@@ -12,13 +12,24 @@ interface DayNavigatorProps {
 }
 
 export function DayNavigator({ date, todayDate, onChange }: DayNavigatorProps) {
+  const isAtOrPastToday = date >= todayDate;
+
   function shiftDay(offsetDays: number) {
     // Do the arithmetic entirely in UTC. Parsing `${date}T00:00:00` (no "Z") reads it as
     // local time, but toISOString() always emits UTC — for any timezone ahead of UTC that
     // round-trip silently shifts the resulting date (e.g. two days back instead of one).
     const [year, month, day] = date.split("-").map(Number);
     const next = new Date(Date.UTC(year, month - 1, day + offsetDays));
-    onChange(next.toISOString().slice(0, 10));
+    const nextDate = next.toISOString().slice(0, 10);
+    // The Next button is disabled once isAtOrPastToday, but guard here too in case this
+    // is ever called some other way — the daily view never looks into the future.
+    if (nextDate > todayDate) return;
+    onChange(nextDate);
+  }
+
+  function handlePickDate(value: string) {
+    if (!value) return;
+    onChange(value > todayDate ? todayDate : value);
   }
 
   return (
@@ -26,8 +37,21 @@ export function DayNavigator({ date, todayDate, onChange }: DayNavigatorProps) {
       <Button variant="outline" size="icon-sm" aria-label="Previous day" onClick={() => shiftDay(-1)}>
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <Input type="date" value={date} onChange={(e) => onChange(e.target.value)} className="w-40" aria-label="Select date" />
-      <Button variant="outline" size="icon-sm" aria-label="Next day" onClick={() => shiftDay(1)}>
+      <Input
+        type="date"
+        value={date}
+        max={todayDate}
+        onChange={(e) => handlePickDate(e.target.value)}
+        className="w-40"
+        aria-label="Select date"
+      />
+      <Button
+        variant="outline"
+        size="icon-sm"
+        aria-label="Next day"
+        disabled={isAtOrPastToday}
+        onClick={() => shiftDay(1)}
+      >
         <ChevronRight className="h-4 w-4" />
       </Button>
       {date !== todayDate && (

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { schedulesApi } from "@/lib/api/schedules";
 import { queryKeys } from "@/lib/query/queryKeys";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -20,6 +20,10 @@ export function useDaySchedule(date: string) {
     queryKey: queryKeys.scheduleDate(date),
     queryFn: () => schedulesApi.byDate(date),
     enabled: !!date,
+    // Each date is a distinct query key, so switching days would otherwise briefly show
+    // the loading skeleton (a visible flicker) before the new day's data arrives. Keeping
+    // the previous day's data on screen during that fetch avoids the flash.
+    placeholderData: keepPreviousData,
   });
 }
 

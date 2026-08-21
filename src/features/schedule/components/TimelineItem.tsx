@@ -6,7 +6,11 @@ import { CategoryBadge } from "@/components/shared/CategoryBadge";
 import { formatDurationMinutes } from "@/lib/datetime/time";
 import { getTimelineDisplayStatus } from "../lib/timelineStatus";
 import { TIMELINE_STATUS_PRESENTATION } from "./timelineStatusPresentation";
-import { useCompleteActivity, useSkipActivity, useStartActivity } from "@/features/tracking/hooks/useTrackingMutations";
+import {
+  useCompleteActivity,
+  useSkipActivity,
+  useStartActivity,
+} from "@/features/tracking/hooks/useTrackingMutations";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -19,7 +23,12 @@ interface TimelineItemProps {
   highlighted?: boolean;
 }
 
-export function TimelineItem({ item, nowTime, onSelect, highlighted }: TimelineItemProps) {
+export function TimelineItem({
+  item,
+  nowTime,
+  onSelect,
+  highlighted,
+}: TimelineItemProps) {
   const displayStatus = getTimelineDisplayStatus(item, nowTime);
   const presentation = TIMELINE_STATUS_PRESENTATION[displayStatus];
   const StatusIcon = presentation.icon;
@@ -31,13 +40,21 @@ export function TimelineItem({ item, nowTime, onSelect, highlighted }: TimelineI
 
   function handleAction(action: "start" | "complete" | "skip") {
     if (!item.activityLog) return;
-    const mutation = action === "start" ? startActivity : action === "complete" ? completeActivity : skipActivity;
+    const mutation =
+      action === "start"
+        ? startActivity
+        : action === "complete"
+          ? completeActivity
+          : skipActivity;
     mutation.mutate(item.activityLog.id, {
       onError: (error) => toast.error(getFriendlyErrorMessage(error)),
     });
   }
 
-  const isPending = startActivity.isPending || completeActivity.isPending || skipActivity.isPending;
+  const isPending =
+    startActivity.isPending ||
+    completeActivity.isPending ||
+    skipActivity.isPending;
   // Planned items can be started, or completed directly for quick one-tap tracking
   // (frontend-requirements 03 §10) — actual timing may legitimately differ from plan.
   const canStart = logStatus === "PLANNED";
@@ -46,7 +63,7 @@ export function TimelineItem({ item, nowTime, onSelect, highlighted }: TimelineI
 
   return (
     <li className="flex gap-3 py-2">
-      <div className="w-14 shrink-0 pt-2 text-right text-xs text-muted-foreground tabular-nums">
+      <div className="w-14 shrink-0 pt-2 text-right text-xs text-muted-foreground mt-1 tabular-nums">
         <div>{item.startTime}</div>
         <div>{item.endTime}</div>
       </div>
@@ -73,37 +90,77 @@ export function TimelineItem({ item, nowTime, onSelect, highlighted }: TimelineI
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{item.activityName}</p>
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              <CategoryBadge name={item.categoryName} color={item.categoryColor} icon={item.categoryIcon} />
-              {item.alarmEnabled && <BellRing className="h-3.5 w-3.5 text-muted-foreground" aria-label="Alarm enabled" />}
-              {item.hasConflict && <AlertTriangle className="h-3.5 w-3.5 text-destructive" aria-label="Schedule conflict" />}
+              <CategoryBadge
+                name={item.categoryName}
+                color={item.categoryColor}
+                icon={item.categoryIcon}
+              />
+              {item.alarmEnabled && (
+                <BellRing
+                  className="h-3.5 w-3.5 text-muted-foreground"
+                  aria-label="Alarm enabled"
+                />
+              )}
+              {item.hasConflict && (
+                <AlertTriangle
+                  className="h-3.5 w-3.5 text-destructive"
+                  aria-label="Schedule conflict"
+                />
+              )}
             </div>
           </div>
-          <span className={cn("flex shrink-0 items-center gap-1 text-xs font-medium", presentation.className)}>
+          <span
+            className={cn(
+              "flex shrink-0 items-center gap-1 text-xs font-medium",
+              presentation.className,
+            )}
+          >
             <StatusIcon className="h-3.5 w-3.5" aria-hidden="true" />
             {presentation.label}
           </span>
         </div>
 
         {item.activityLog?.actualStart && item.activityLog?.actualEnd && (
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            Actual: {formatActualRange(item.activityLog.actualStart, item.activityLog.actualEnd)}
+          <p className="mt-1.5 text-xs text-muted-foreground mt-1">
+            Actual:{" "}
+            {formatActualRange(
+              item.activityLog.actualStart,
+              item.activityLog.actualEnd,
+            )}
           </p>
         )}
 
         {(canStart || canComplete || canSkip) && (
-          <div className="mt-2.5 flex gap-2" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="mt-2.5 flex gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
             {logStatus === "PLANNED" && (
-              <Button size="sm" variant="outline" disabled={isPending} onClick={() => handleAction("start")}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={isPending}
+                onClick={() => handleAction("start")}
+              >
                 Start
               </Button>
             )}
             {canComplete && (
-              <Button size="sm" disabled={isPending} onClick={() => handleAction("complete")}>
+              <Button
+                size="sm"
+                disabled={isPending}
+                onClick={() => handleAction("complete")}
+              >
                 Complete
               </Button>
             )}
             {canSkip && (
-              <Button size="sm" variant="outline" disabled={isPending} onClick={() => handleAction("skip")}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={isPending}
+                onClick={() => handleAction("skip")}
+              >
                 Skip
               </Button>
             )}
@@ -117,6 +174,9 @@ export function TimelineItem({ item, nowTime, onSelect, highlighted }: TimelineI
 function formatActualRange(actualStart: string, actualEnd: string): string {
   const start = new Date(actualStart);
   const end = new Date(actualEnd);
-  const minutes = Math.max(0, Math.round((end.getTime() - start.getTime()) / 60_000));
+  const minutes = Math.max(
+    0,
+    Math.round((end.getTime() - start.getTime()) / 60_000),
+  );
   return formatDurationMinutes(minutes);
 }

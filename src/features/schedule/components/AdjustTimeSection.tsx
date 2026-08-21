@@ -8,11 +8,24 @@ import { Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { formatDateLabel } from "@/lib/datetime/time";
-import { moveExceptionSchema, type MoveExceptionFormValues } from "@/lib/validation/schedule";
+import {
+  moveExceptionSchema,
+  type MoveExceptionFormValues,
+} from "@/lib/validation/schedule";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
-import { useCreateScheduleException, useUpdateScheduleException } from "../hooks/useScheduleExceptionMutations";
+import {
+  useCreateScheduleException,
+  useUpdateScheduleException,
+} from "../hooks/useScheduleExceptionMutations";
 import { useConflictResolution } from "../hooks/useConflictResolution";
 import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
 import type { ConflictResolution, ScheduleDayItem } from "@/types/schedule";
@@ -36,23 +49,44 @@ export function AdjustTimeSection({ item, onSaved }: AdjustTimeSectionProps) {
 
   const form = useForm<MoveExceptionFormValues>({
     resolver: zodResolver(moveExceptionSchema),
-    defaultValues: { startTime: item.startTime, endTime: item.endTime, reason: item.notes ?? "" },
+    defaultValues: {
+      startTime: item.startTime,
+      endTime: item.endTime,
+      reason: item.notes ?? "",
+    },
   });
 
-  function submit(values: MoveExceptionFormValues, resolution?: Exclude<ConflictResolution, "CANCEL">) {
+  function submit(
+    values: MoveExceptionFormValues,
+    resolution?: Exclude<ConflictResolution, "CANCEL">,
+  ) {
     const onSuccess = () => {
       toast.success("Updated for this date");
       setIsEditing(false);
       onSaved?.();
     };
     const onError = (error: unknown) => {
-      if (!resolution && conflict.captureIfConflict(error, (nextResolution) => submit(values, nextResolution))) return;
+      if (
+        !resolution &&
+        conflict.captureIfConflict(error, (nextResolution) =>
+          submit(values, nextResolution),
+        )
+      )
+        return;
       toast.error(getFriendlyErrorMessage(error));
     };
 
     if (item.exceptionId) {
       updateException.mutate(
-        { id: item.exceptionId, input: { startTime: values.startTime, endTime: values.endTime, reason: values.reason || null, resolution } },
+        {
+          id: item.exceptionId,
+          input: {
+            startTime: values.startTime,
+            endTime: values.endTime,
+            reason: values.reason || null,
+            resolution,
+          },
+        },
         { onSuccess, onError },
       );
     } else {
@@ -79,7 +113,12 @@ export function AdjustTimeSection({ item, onSaved }: AdjustTimeSectionProps) {
       <div className="mb-2 flex items-center justify-between">
         <p className="text-sm font-medium">Adjust for this date</p>
         {!isEditing && (
-          <Button size="icon-sm" variant="ghost" aria-label="Edit time for this date" onClick={() => setIsEditing(true)}>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            aria-label="Edit time for this date"
+            onClick={() => setIsEditing(true)}
+          >
             <Pencil className="h-4 w-4" />
           </Button>
         )}
@@ -87,7 +126,11 @@ export function AdjustTimeSection({ item, onSaved }: AdjustTimeSectionProps) {
 
       {isEditing ? (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((values) => submit(values))} className="space-y-3" noValidate>
+          <form
+            onSubmit={form.handleSubmit((values) => submit(values))}
+            className="space-y-3"
+            noValidate
+          >
             <div className="grid grid-cols-2 gap-3">
               <FormField
                 control={form.control}
@@ -133,18 +176,32 @@ export function AdjustTimeSection({ item, onSaved }: AdjustTimeSectionProps) {
               <Button type="submit" size="sm" disabled={isPending}>
                 Save for this date
               </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => setIsEditing(false)}>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsEditing(false)}
+              >
                 <X className="h-4 w-4" /> Cancel
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">This only changes {formatDateLabel(item.date)} — your recurring schedule stays the same.</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              This only changes {formatDateLabel(item.date)} — your recurring
+              schedule stays the same.
+            </p>
           </form>
         </Form>
       ) : (
-        <p className="text-xs text-muted-foreground">Change the time just for {formatDateLabel(item.date)} without editing your recurring schedule.</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Change the time just for {formatDateLabel(item.date)} without editing
+          your recurring schedule.
+        </p>
       )}
 
-      <ScheduleConflictDialog conflicts={conflict.conflict?.conflicts ?? null} onResolve={conflict.resolve} />
+      <ScheduleConflictDialog
+        conflicts={conflict.conflict?.conflicts ?? null}
+        onResolve={conflict.resolve}
+      />
     </div>
   );
 }

@@ -4,14 +4,36 @@ import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ConfirmDialog, useConfirmDialog } from "@/components/shared/ConfirmDialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  ConfirmDialog,
+  useConfirmDialog,
+} from "@/components/shared/ConfirmDialog";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
-import { formatDateLabel, formatDurationMinutes, formatIsoToTime, minutesBetween } from "@/lib/datetime/time";
+import {
+  formatDateLabel,
+  formatDurationMinutes,
+  formatIsoToTime,
+  minutesBetween,
+} from "@/lib/datetime/time";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { useCompleteActivity, useSkipActivity, useStartActivity } from "@/features/tracking/hooks/useTrackingMutations";
-import { useCreateScheduleException, useDeleteScheduleException } from "../hooks/useScheduleExceptionMutations";
+import {
+  useCompleteActivity,
+  useSkipActivity,
+  useStartActivity,
+} from "@/features/tracking/hooks/useTrackingMutations";
+import {
+  useCreateScheduleException,
+  useDeleteScheduleException,
+} from "../hooks/useScheduleExceptionMutations";
 import { getTimelineDisplayStatus } from "../lib/timelineStatus";
 import { TIMELINE_STATUS_PRESENTATION } from "./timelineStatusPresentation";
 import { AdjustTimeSection } from "./AdjustTimeSection";
@@ -30,7 +52,11 @@ const SOURCE_LABEL: Record<ScheduleDayItem["source"], string> = {
   ONE_TIME: "One-time",
 };
 
-export function ActivityDetailSheet({ item, nowTime, onOpenChange }: ActivityDetailSheetProps) {
+export function ActivityDetailSheet({
+  item,
+  nowTime,
+  onOpenChange,
+}: ActivityDetailSheetProps) {
   const { user } = useAuth();
   const removeConfirm = useConfirmDialog();
 
@@ -45,7 +71,8 @@ export function ActivityDetailSheet({ item, nowTime, onOpenChange }: ActivityDet
   const displayStatus = getTimelineDisplayStatus(item, nowTime);
   const presentation = TIMELINE_STATUS_PRESENTATION[displayStatus];
   const log = item.activityLog;
-  const timezone = user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const timezone =
+    user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   function handleRemoveForToday() {
     if (item!.exceptionId) {
@@ -60,7 +87,12 @@ export function ActivityDetailSheet({ item, nowTime, onOpenChange }: ActivityDet
       return;
     }
     createException.mutate(
-      { sourceScheduleEntryId: item!.scheduleEntryId, activityId: item!.activityId, date: item!.date, action: "SKIP" },
+      {
+        sourceScheduleEntryId: item!.scheduleEntryId,
+        activityId: item!.activityId,
+        date: item!.date,
+        action: "SKIP",
+      },
       {
         onSuccess: () => {
           toast.success("Skipped for this date");
@@ -72,8 +104,12 @@ export function ActivityDetailSheet({ item, nowTime, onOpenChange }: ActivityDet
     );
   }
 
-  const isTrackingPending = startActivity.isPending || completeActivity.isPending || skipActivity.isPending;
-  const canComplete = log?.status === "IN_PROGRESS" || log?.status === "PLANNED";
+  const isTrackingPending =
+    startActivity.isPending ||
+    completeActivity.isPending ||
+    skipActivity.isPending;
+  const canComplete =
+    log?.status === "IN_PROGRESS" || log?.status === "PLANNED";
   const canSkip = log?.status === "PLANNED" || log?.status === "IN_PROGRESS";
 
   return (
@@ -87,7 +123,11 @@ export function ActivityDetailSheet({ item, nowTime, onOpenChange }: ActivityDet
 
           <div className="flex-1 space-y-5 overflow-y-auto px-4">
             <div className="flex flex-wrap items-center gap-2">
-              <CategoryBadge name={item.categoryName} color={item.categoryColor} icon={item.categoryIcon} />
+              <CategoryBadge
+                name={item.categoryName}
+                color={item.categoryColor}
+                icon={item.categoryIcon}
+              />
               <Badge variant="outline" className={presentation.className}>
                 {presentation.label}
               </Badge>
@@ -95,13 +135,17 @@ export function ActivityDetailSheet({ item, nowTime, onOpenChange }: ActivityDet
 
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <dt className="text-xs text-muted-foreground">Planned</dt>
+                <dt className="text-xs text-muted-foreground mt-1">Planned</dt>
                 <dd>
-                  {item.startTime} – {item.endTime} ({formatDurationMinutes(minutesBetween(item.startTime, item.endTime))})
+                  {item.startTime} – {item.endTime} (
+                  {formatDurationMinutes(
+                    minutesBetween(item.startTime, item.endTime),
+                  )}
+                  )
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Actual</dt>
+                <dt className="text-xs text-muted-foreground mt-1">Actual</dt>
                 <dd>
                   {log?.actualStart
                     ? `${formatIsoToTime(log.actualStart, timezone)} – ${log.actualEnd ? formatIsoToTime(log.actualEnd, timezone) : "…"}`
@@ -109,18 +153,22 @@ export function ActivityDetailSheet({ item, nowTime, onOpenChange }: ActivityDet
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Alarm</dt>
-                <dd>{item.alarmEnabled ? `${item.alarmOffsetMinutes ?? 0} min before` : "Off"}</dd>
+                <dt className="text-xs text-muted-foreground mt-1">Alarm</dt>
+                <dd>
+                  {item.alarmEnabled
+                    ? `${item.alarmOffsetMinutes ?? 0} min before`
+                    : "Off"}
+                </dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Source</dt>
+                <dt className="text-xs text-muted-foreground mt-1">Source</dt>
                 <dd>{SOURCE_LABEL[item.source]}</dd>
               </div>
             </dl>
 
             {item.notes && (
               <div>
-                <p className="text-xs text-muted-foreground">Notes</p>
+                <p className="text-xs text-muted-foreground mt-1">Notes</p>
                 <p className="text-sm">{item.notes}</p>
               </div>
             )}
@@ -132,27 +180,53 @@ export function ActivityDetailSheet({ item, nowTime, onOpenChange }: ActivityDet
                     size="sm"
                     variant="outline"
                     disabled={isTrackingPending}
-                    onClick={() => startActivity.mutate(log.id, { onError: (e) => toast.error(getFriendlyErrorMessage(e)) })}
+                    onClick={() =>
+                      startActivity.mutate(log.id, {
+                        onError: (e) => toast.error(getFriendlyErrorMessage(e)),
+                      })
+                    }
                   >
                     Start
                   </Button>
                 )}
                 {canComplete && log && (
-                  <Button size="sm" disabled={isTrackingPending} onClick={() => completeActivity.mutate(log.id, { onError: (e) => toast.error(getFriendlyErrorMessage(e)) })}>
+                  <Button
+                    size="sm"
+                    disabled={isTrackingPending}
+                    onClick={() =>
+                      completeActivity.mutate(log.id, {
+                        onError: (e) => toast.error(getFriendlyErrorMessage(e)),
+                      })
+                    }
+                  >
                     Complete
                   </Button>
                 )}
                 {canSkip && log && (
-                  <Button size="sm" variant="outline" disabled={isTrackingPending} onClick={() => skipActivity.mutate(log.id, { onError: (e) => toast.error(getFriendlyErrorMessage(e)) })}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isTrackingPending}
+                    onClick={() =>
+                      skipActivity.mutate(log.id, {
+                        onError: (e) => toast.error(getFriendlyErrorMessage(e)),
+                      })
+                    }
+                  >
                     Skip
                   </Button>
                 )}
               </div>
             )}
 
-            {log && (log.status === "COMPLETED" || log.status === "ADJUSTED") && (
-              <CorrectActualTimingSection key={item.id} date={item.date} log={log} />
-            )}
+            {log &&
+              (log.status === "COMPLETED" || log.status === "ADJUSTED") && (
+                <CorrectActualTimingSection
+                  key={item.id}
+                  date={item.date}
+                  log={log}
+                />
+              )}
 
             <AdjustTimeSection key={item.id} item={item} />
           </div>
@@ -169,7 +243,11 @@ export function ActivityDetailSheet({ item, nowTime, onOpenChange }: ActivityDet
       <ConfirmDialog
         open={removeConfirm.open}
         onOpenChange={removeConfirm.onOpenChange}
-        title={item.source === "BASE" ? `Skip "${item.activityName}" for this date?` : `Remove "${item.activityName}"?`}
+        title={
+          item.source === "BASE"
+            ? `Skip "${item.activityName}" for this date?`
+            : `Remove "${item.activityName}"?`
+        }
         description="Your recurring schedule and historical records are not affected."
         confirmLabel={item.source === "BASE" ? "Skip" : "Remove"}
         destructive

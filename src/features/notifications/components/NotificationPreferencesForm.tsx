@@ -9,11 +9,20 @@ import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { AlarmOffsetField } from "@/features/activities/components/AlarmOffsetField";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
-import { useNotificationPreferences, useUpdateNotificationPreferences } from "../hooks/useNotificationPreferences";
+import {
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
+} from "../hooks/useNotificationPreferences";
 import type { UpdateNotificationPreferencesInput } from "@/types/notification";
 
 export function NotificationPreferencesForm() {
-  const { data: preferences, isLoading, isError, error, refetch } = useNotificationPreferences();
+  const {
+    data: preferences,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useNotificationPreferences();
   const updatePreferences = useUpdateNotificationPreferences();
 
   const [quietStart, setQuietStart] = useState("22:00");
@@ -31,22 +40,32 @@ export function NotificationPreferencesForm() {
   if (!preferences) return null;
 
   function save(patch: UpdateNotificationPreferencesInput) {
-    updatePreferences.mutate(patch, { onError: (e) => toast.error(getFriendlyErrorMessage(e)) });
+    updatePreferences.mutate(patch, {
+      onError: (e) => toast.error(getFriendlyErrorMessage(e)),
+    });
   }
 
   return (
     <div className="space-y-5">
       <div>
         <p className="text-sm font-medium">Preferences</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">Fine-tune when and how reminders reach you.</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Fine-tune when and how reminders reach you.
+        </p>
       </div>
       <div className="space-y-5 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <div>
             <Label htmlFor="push-enabled">Notifications enabled</Label>
-            <p className="text-xs text-muted-foreground">Turn off to stop all reminders across every device.</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Turn off to stop all reminders across every device.
+            </p>
           </div>
-          <Switch id="push-enabled" checked={preferences.pushEnabled} onCheckedChange={(checked) => save({ pushEnabled: checked })} />
+          <Switch
+            id="push-enabled"
+            checked={preferences.pushEnabled}
+            onCheckedChange={(checked) => save({ pushEnabled: checked })}
+          />
         </div>
 
         <div className="space-y-1.5">
@@ -54,16 +73,24 @@ export function NotificationPreferencesForm() {
           <AlarmOffsetField
             id="default-alarm-offset"
             value={preferences.defaultAlarmOffsetMinutes}
-            onChange={(value) => value !== undefined && save({ defaultAlarmOffsetMinutes: value })}
+            onChange={(value) =>
+              value !== undefined && save({ defaultAlarmOffsetMinutes: value })
+            }
           />
         </div>
 
         <div className="flex items-center justify-between">
           <div>
             <Label htmlFor="quiet-hours">Quiet hours</Label>
-            <p className="text-xs text-muted-foreground">Reminders are suppressed during this window.</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Reminders are suppressed during this window.
+            </p>
           </div>
-          <Switch id="quiet-hours" checked={preferences.quietHoursEnabled} onCheckedChange={(checked) => save({ quietHoursEnabled: checked })} />
+          <Switch
+            id="quiet-hours"
+            checked={preferences.quietHoursEnabled}
+            onCheckedChange={(checked) => save({ quietHoursEnabled: checked })}
+          />
         </div>
 
         {preferences.quietHoursEnabled && (

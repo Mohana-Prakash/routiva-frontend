@@ -7,11 +7,34 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
-import { adHocActivitySchema, type AdHocActivityFormValues } from "@/lib/validation/schedule";
+import {
+  adHocActivitySchema,
+  type AdHocActivityFormValues,
+} from "@/lib/validation/schedule";
 import { useActiveActivities } from "@/features/activities/hooks/useActivities";
 import { useCreateScheduleException } from "../hooks/useScheduleExceptionMutations";
 import { useConflictResolution } from "../hooks/useConflictResolution";
@@ -35,28 +58,49 @@ interface AdHocActivityDialogProps {
  * Creates a schedule exception (action=ADD) so it never touches the recurring
  * base schedule.
  */
-export function AdHocActivityDialog({ open, onOpenChange, date }: AdHocActivityDialogProps) {
+export function AdHocActivityDialog({
+  open,
+  onOpenChange,
+  date,
+}: AdHocActivityDialogProps) {
   const { user } = useAuth();
-  const timezone = user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const { data: activities, isLoading: activitiesLoading } = useActiveActivities();
+  const timezone =
+    user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const { data: activities, isLoading: activitiesLoading } =
+    useActiveActivities();
   const createException = useCreateScheduleException();
   const conflict = useConflictResolution();
   const [newActivityOpen, setNewActivityOpen] = useState(false);
 
   const form = useForm<AdHocActivityFormValues>({
     resolver: zodResolver(adHocActivitySchema),
-    defaultValues: { activityId: "", date: date ?? "", startTime: "", endTime: "", reason: "" },
+    defaultValues: {
+      activityId: "",
+      date: date ?? "",
+      startTime: "",
+      endTime: "",
+      reason: "",
+    },
   });
 
   useEffect(() => {
     if (open) {
       const now = nowTimeInTimeZone(timezone);
-      form.reset({ activityId: activities?.[0]?.id ?? "", date: date ?? "", startTime: now, endTime: now, reason: "" });
+      form.reset({
+        activityId: activities?.[0]?.id ?? "",
+        date: date ?? "",
+        startTime: now,
+        endTime: now,
+        reason: "",
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, date]);
 
-  function submit(values: AdHocActivityFormValues, resolution?: Exclude<ConflictResolution, "CANCEL">) {
+  function submit(
+    values: AdHocActivityFormValues,
+    resolution?: Exclude<ConflictResolution, "CANCEL">,
+  ) {
     createException.mutate(
       {
         activityId: values.activityId,
@@ -73,7 +117,13 @@ export function AdHocActivityDialog({ open, onOpenChange, date }: AdHocActivityD
           onOpenChange(false);
         },
         onError: (error) => {
-          if (!resolution && conflict.captureIfConflict(error, (nextResolution) => submit(values, nextResolution))) return;
+          if (
+            !resolution &&
+            conflict.captureIfConflict(error, (nextResolution) =>
+              submit(values, nextResolution),
+            )
+          )
+            return;
           toast.error(getFriendlyErrorMessage(error));
         },
       },
@@ -86,14 +136,21 @@ export function AdHocActivityDialog({ open, onOpenChange, date }: AdHocActivityD
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add Activity</DialogTitle>
-            <DialogDescription>A one-off activity for this date — it won&apos;t become part of your recurring schedule.</DialogDescription>
+            <DialogDescription>
+              A one-off activity for this date — it won&apos;t become part of
+              your recurring schedule.
+            </DialogDescription>
           </DialogHeader>
 
           {activitiesLoading ? (
             <LoadingSkeleton className="h-48 w-full" />
           ) : (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit((values) => submit(values))} className="space-y-4" noValidate>
+              <form
+                onSubmit={form.handleSubmit((values) => submit(values))}
+                className="space-y-4"
+                noValidate
+              >
                 <FormField
                   control={form.control}
                   name="activityId"
@@ -101,7 +158,13 @@ export function AdHocActivityDialog({ open, onOpenChange, date }: AdHocActivityD
                     <FormItem>
                       <div className="flex items-center justify-between">
                         <FormLabel>Activity</FormLabel>
-                        <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setNewActivityOpen(true)}>
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-xs"
+                          onClick={() => setNewActivityOpen(true)}
+                        >
                           + New activity
                         </Button>
                       </div>
@@ -109,7 +172,12 @@ export function AdHocActivityDialog({ open, onOpenChange, date }: AdHocActivityD
                         <Select
                           value={field.value}
                           onValueChange={(v) => v && field.onChange(v)}
-                          items={Object.fromEntries((activities ?? []).map((activity) => [activity.id, activity.name]))}
+                          items={Object.fromEntries(
+                            (activities ?? []).map((activity) => [
+                              activity.id,
+                              activity.name,
+                            ]),
+                          )}
                         >
                           <SelectTrigger id={field.name} className="w-full">
                             <SelectValue placeholder="Choose an activity" />
@@ -182,19 +250,32 @@ export function AdHocActivityDialog({ open, onOpenChange, date }: AdHocActivityD
                   )}
                 />
                 <DialogFooter>
-                  <Button type="submit" disabled={createException.isPending || !activities?.length}>
+                  <Button
+                    type="submit"
+                    disabled={createException.isPending || !activities?.length}
+                  >
                     {createException.isPending ? "Adding…" : "Add Activity"}
                   </Button>
                 </DialogFooter>
-                {!activities?.length && <p className="text-xs text-muted-foreground">Create an activity first, using the link above.</p>}
+                {!activities?.length && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Create an activity first, using the link above.
+                  </p>
+                )}
               </form>
             </Form>
           )}
         </DialogContent>
       </Dialog>
 
-      <ActivityFormDialog open={newActivityOpen} onOpenChange={setNewActivityOpen} />
-      <ScheduleConflictDialog conflicts={conflict.conflict?.conflicts ?? null} onResolve={conflict.resolve} />
+      <ActivityFormDialog
+        open={newActivityOpen}
+        onOpenChange={setNewActivityOpen}
+      />
+      <ScheduleConflictDialog
+        conflicts={conflict.conflict?.conflicts ?? null}
+        onResolve={conflict.resolve}
+      />
     </>
   );
 }

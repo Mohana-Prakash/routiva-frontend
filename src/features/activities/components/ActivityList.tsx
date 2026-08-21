@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, Pencil, Archive, ArchiveRestore, Trash2, BellRing, BellOff, ListChecks } from "lucide-react";
+import {
+  MoreVertical,
+  Pencil,
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  BellRing,
+  BellOff,
+  ListChecks,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +20,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ConfirmDialog, useConfirmDialog } from "@/components/shared/ConfirmDialog";
+import {
+  ConfirmDialog,
+  useConfirmDialog,
+} from "@/components/shared/ConfirmDialog";
 import { LoadingSkeletonList } from "@/components/shared/LoadingSkeleton";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -20,14 +32,25 @@ import { formatDurationMinutes } from "@/lib/datetime/time";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { useActivities } from "../hooks/useActivities";
 import { useCategories } from "@/features/categories/hooks/useCategories";
-import { useDeleteActivity, useUpdateActivity } from "../hooks/useActivityMutations";
+import {
+  useDeleteActivity,
+  useUpdateActivity,
+} from "../hooks/useActivityMutations";
 import { ActivityFormDialog } from "./ActivityFormDialog";
 import type { Activity } from "@/types/activity";
 
 export function ActivityList() {
-  const { data: activities, isLoading, isError, error, refetch } = useActivities();
+  const {
+    data: activities,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useActivities();
   const { data: categories } = useCategories();
-  const [editing, setEditing] = useState<Activity | null | undefined>(undefined);
+  const [editing, setEditing] = useState<Activity | null | undefined>(
+    undefined,
+  );
   const [deleting, setDeleting] = useState<Activity | null>(null);
   const deleteActivity = useDeleteActivity();
   const updateActivity = useUpdateActivity();
@@ -84,24 +107,38 @@ export function ActivityList() {
             <li key={activity.id} className="flex items-center gap-3 p-3">
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-sm font-medium">{activity.name}</p>
+                  <p className="truncate text-sm font-medium">
+                    {activity.name}
+                  </p>
                   {!activity.isActive && (
                     <Badge variant="outline" className="text-xs">
                       Inactive
                     </Badge>
                   )}
                 </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  {category && <CategoryBadge name={category.name} color={category.color} icon={category.icon} />}
-                  {activity.defaultDurationMinutes && <span>{formatDurationMinutes(activity.defaultDurationMinutes)}</span>}
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
+                  {category && (
+                    <CategoryBadge
+                      name={category.name}
+                      color={category.color}
+                      icon={category.icon}
+                    />
+                  )}
+                  {activity.defaultDurationMinutes && (
+                    <span>
+                      {formatDurationMinutes(activity.defaultDurationMinutes)}
+                    </span>
+                  )}
                   <span className="inline-flex items-center gap-1">
                     {activity.alarmEnabled ? (
                       <>
-                        <BellRing className="h-3.5 w-3.5" aria-hidden="true" /> Alarm on
+                        <BellRing className="h-3.5 w-3.5" aria-hidden="true" />{" "}
+                        Alarm on
                       </>
                     ) : (
                       <>
-                        <BellOff className="h-3.5 w-3.5" aria-hidden="true" /> No alarm
+                        <BellOff className="h-3.5 w-3.5" aria-hidden="true" />{" "}
+                        No alarm
                       </>
                     )}
                   </span>
@@ -110,7 +147,11 @@ export function ActivityList() {
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
-                    <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${activity.name}`}>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`Actions for ${activity.name}`}
+                    >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   }
@@ -120,7 +161,9 @@ export function ActivityList() {
                     <Pencil className="h-4 w-4" aria-hidden="true" />
                     Edit
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleToggleActive(activity)}>
+                  <DropdownMenuItem
+                    onSelect={() => handleToggleActive(activity)}
+                  >
                     {activity.isActive ? (
                       <>
                         <Archive className="h-4 w-4" aria-hidden="true" />
@@ -128,7 +171,10 @@ export function ActivityList() {
                       </>
                     ) : (
                       <>
-                        <ArchiveRestore className="h-4 w-4" aria-hidden="true" />
+                        <ArchiveRestore
+                          className="h-4 w-4"
+                          aria-hidden="true"
+                        />
                         Reactivate
                       </>
                     )}
@@ -150,7 +196,11 @@ export function ActivityList() {
         })}
       </ul>
 
-      <ActivityFormDialog open={editing !== undefined} onOpenChange={(open) => !open && setEditing(undefined)} activity={editing} />
+      <ActivityFormDialog
+        open={editing !== undefined}
+        onOpenChange={(open) => !open && setEditing(undefined)}
+        activity={editing}
+      />
 
       <ConfirmDialog
         open={confirm.open}
