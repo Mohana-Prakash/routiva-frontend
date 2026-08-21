@@ -67,7 +67,7 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFor
       description: values.description || null,
       defaultDurationMinutes: values.defaultDurationMinutes ?? null,
       alarmEnabled: values.alarmEnabled,
-      alarmOffsetMinutes: values.alarmEnabled ? values.alarmOffsetMinutes ?? null : null,
+      alarmOffsetMinutes: values.alarmEnabled ? values.alarmOffsetMinutes ?? null : undefined,
     };
     const onSuccess = () => {
       toast.success(isEditing ? "Activity updated" : "Activity created");

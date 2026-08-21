@@ -32,17 +32,6 @@ export function CategoryList() {
 
   if (isLoading) return <LoadingSkeletonList count={4} />;
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
-  if (!categories || categories.length === 0) {
-    return (
-      <EmptyState
-        icon={Tag}
-        title="No categories yet"
-        description="Create a category to start organizing your activities."
-        actionLabel="New Category"
-        onAction={() => setEditing(null)}
-      />
-    );
-  }
 
   function handleToggleActive(category: Category) {
     updateCategory.mutate(
@@ -65,72 +54,84 @@ export function CategoryList() {
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-end">
-        <Button size="sm" onClick={() => setEditing(null)}>
-          New Category
-        </Button>
-      </div>
-      <ul className="divide-y rounded-lg border">
-        {categories.map((category) => {
-          const Icon = getCategoryIcon(category.icon);
-          return (
-            <li key={category.id} className="flex items-center gap-3 p-3">
-              <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                style={{ backgroundColor: `${category.color}1A`, color: category.color }}
-              >
-                <Icon className="h-4 w-4" aria-hidden="true" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{category.name}</p>
-                {!category.isActive && (
-                  <Badge variant="outline" className="mt-0.5 text-xs">
-                    Inactive
-                  </Badge>
-                )}
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${category.name}`}>
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  }
-                />
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => setEditing(category)}>
-                    <Pencil className="h-4 w-4" aria-hidden="true" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleToggleActive(category)}>
-                    {category.isActive ? (
-                      <>
-                        <Archive className="h-4 w-4" aria-hidden="true" />
-                        Deactivate
-                      </>
-                    ) : (
-                      <>
-                        <ArchiveRestore className="h-4 w-4" aria-hidden="true" />
-                        Reactivate
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onSelect={() => {
-                      setDeleting(category);
-                      confirm.show();
-                    }}
+      {!categories || categories.length === 0 ? (
+        <EmptyState
+          icon={Tag}
+          title="No categories yet"
+          description="Create a category to start organizing your activities."
+          actionLabel="New Category"
+          onAction={() => setEditing(null)}
+        />
+      ) : (
+        <>
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => setEditing(null)}>
+              New Category
+            </Button>
+          </div>
+          <ul className="divide-y rounded-lg border">
+            {categories.map((category) => {
+              const Icon = getCategoryIcon(category.icon);
+              return (
+                <li key={category.id} className="flex items-center gap-3 p-3">
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                    style={{ backgroundColor: `${category.color}1A`, color: category.color }}
                   >
-                    <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </li>
-          );
-        })}
-      </ul>
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{category.name}</p>
+                    {!category.isActive && (
+                      <Badge variant="outline" className="mt-0.5 text-xs">
+                        Inactive
+                      </Badge>
+                    )}
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${category.name}`}>
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditing(category)}>
+                        <Pencil className="h-4 w-4" aria-hidden="true" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleToggleActive(category)}>
+                        {category.isActive ? (
+                          <>
+                            <Archive className="h-4 w-4" aria-hidden="true" />
+                            Deactivate
+                          </>
+                        ) : (
+                          <>
+                            <ArchiveRestore className="h-4 w-4" aria-hidden="true" />
+                            Reactivate
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => {
+                          setDeleting(category);
+                          confirm.show();
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
 
       <CategoryFormDialog open={editing !== undefined} onOpenChange={(open) => !open && setEditing(undefined)} category={editing} />
 

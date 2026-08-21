@@ -69,7 +69,7 @@ export function UserMenu() {
             Settings
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onSelect={() => setConfirmOpen(true)}>
+          <DropdownMenuItem variant="destructive" onClick={() => setConfirmOpen(true)}>
             <LogOut className="h-4 w-4" aria-hidden="true" />
             Log out
           </DropdownMenuItem>

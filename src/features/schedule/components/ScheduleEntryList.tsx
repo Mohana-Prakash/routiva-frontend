@@ -60,17 +60,6 @@ export function ScheduleEntryList() {
 
   if (isLoading) return <LoadingSkeletonList count={4} />;
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
-  if (!entries || entries.length === 0) {
-    return (
-      <EmptyState
-        icon={CalendarDays}
-        title="No recurring schedule yet"
-        description="Add an activity to build your daily routine."
-        actionLabel="Add to Schedule"
-        onAction={() => setEditing(null)}
-      />
-    );
-  }
 
   function handleDelete() {
     if (!deleting) return;
@@ -89,72 +78,84 @@ export function ScheduleEntryList() {
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-end">
-        <Button size="sm" onClick={() => setEditing(null)}>
-          Add to Schedule
-        </Button>
-      </div>
-      <ul className="divide-y rounded-lg border">
-        {entries.map((entry) => {
-          const activity = activities?.find((a) => a.id === entry.activityId);
-          const category = categories?.find(
-            (c) => c.id === activity?.categoryId,
-          );
-          return (
-            <li key={entry.id} className="flex items-center gap-3 p-3">
-              <div className="w-20 shrink-0 text-xs text-muted-foreground mt-1 tabular-nums">
-                <div>{entry.startTime}</div>
-                <div>{entry.endTime}</div>
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
-                  {activity?.name ?? "Unknown activity"}
-                </p>
-                <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                  {category && (
-                    <CategoryBadge
-                      name={category.name}
-                      color={category.color}
-                      icon={category.icon}
+      {!entries || entries.length === 0 ? (
+        <EmptyState
+          icon={CalendarDays}
+          title="No recurring schedule yet"
+          description="Add an activity to build your daily routine."
+          actionLabel="Add to Schedule"
+          onAction={() => setEditing(null)}
+        />
+      ) : (
+        <>
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => setEditing(null)}>
+              Add to Schedule
+            </Button>
+          </div>
+          <ul className="divide-y rounded-lg border">
+            {entries.map((entry) => {
+              const activity = activities?.find((a) => a.id === entry.activityId);
+              const category = categories?.find(
+                (c) => c.id === activity?.categoryId,
+              );
+              return (
+                <li key={entry.id} className="flex items-center gap-3 p-3">
+                  <div className="w-20 shrink-0 text-xs text-muted-foreground mt-1 tabular-nums">
+                    <div>{entry.startTime}</div>
+                    <div>{entry.endTime}</div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {activity?.name ?? "Unknown activity"}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                      {category && (
+                        <CategoryBadge
+                          name={category.name}
+                          color={category.color}
+                          icon={category.icon}
+                        />
+                      )}
+                      <span>{describeRecurrence(entry)}</span>
+                    </div>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Actions for ${activity?.name ?? "activity"}`}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      }
                     />
-                  )}
-                  <span>{describeRecurrence(entry)}</span>
-                </div>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={`Actions for ${activity?.name ?? "activity"}`}
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  }
-                />
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => setEditing(entry)}>
-                    <Pencil className="h-4 w-4" aria-hidden="true" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onSelect={() => {
-                      setDeleting(entry);
-                      setDeleteScope("THIS_AND_FUTURE");
-                      confirm.show();
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    Remove
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </li>
-          );
-        })}
-      </ul>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditing(entry)}>
+                        <Pencil className="h-4 w-4" aria-hidden="true" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => {
+                          setDeleting(entry);
+                          setDeleteScope("THIS_AND_FUTURE");
+                          confirm.show();
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        Remove
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
 
       <ScheduleEntryFormDialog
         open={editing !== undefined}
