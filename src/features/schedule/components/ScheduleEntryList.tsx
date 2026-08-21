@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, Pencil, Trash2, CalendarDays } from "lucide-react";
+import { MoreVertical, Pencil, Archive, ArchiveRestore, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,11 +22,11 @@ import { CategoryBadge } from "@/components/shared/CategoryBadge";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { formatDurationMinutes, minutesBetween } from "@/lib/datetime/time";
 import { useScheduleEntries } from "../hooks/useScheduleEntries";
-import { useDeleteScheduleEntry } from "../hooks/useScheduleEntryMutations";
+import { useDeleteScheduleEntry, useUpdateScheduleEntry } from "../hooks/useScheduleEntryMutations";
 import { useActivities } from "@/features/activities/hooks/useActivities";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { ScheduleEntryFormDialog } from "./ScheduleEntryFormDialog";
-import type { ScheduleEntry, ScheduleUpdateScope } from "@/types/schedule";
+import type { ScheduleEntry } from "@/types/schedule";
 
 function describeRecurrence(entry: ScheduleEntry): string {
   if (entry.recurrence.type === "DAILY") return "Daily";
@@ -53,25 +54,37 @@ export function ScheduleEntryList() {
   const [editing, setEditing] = useState<ScheduleEntry | null | undefined>(
     undefined,
   );
-  const [deleting, setDeleting] = useState<ScheduleEntry | null>(null);
-  const [deleteScope, setDeleteScope] =
-    useState<ScheduleUpdateScope>("THIS_AND_FUTURE");
-  const deleteEntry = useDeleteScheduleEntry();
+  const [deactivating, setDeactivating] = useState<ScheduleEntry | null>(null);
+  const deactivateEntry = useDeleteScheduleEntry();
+  const updateEntry = useUpdateScheduleEntry();
   const confirm = useConfirmDialog();
 
   if (isLoading) return <LoadingSkeletonList count={4} />;
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
 
-  function handleDelete() {
-    if (!deleting) return;
-    deleteEntry.mutate(
-      { id: deleting.id, scope: deleteScope },
+  function handleDeactivate() {
+    if (!deactivating) return;
+    // Backend semantics: this always soft-deactivates the whole recurring entry
+    // (isActive:false) — nothing is ever permanently deleted, and it stays
+    // visible below (marked Inactive) with a Reactivate action.
+    deactivateEntry.mutate(
+      { id: deactivating.id, scope: "ENTIRE_RULE" },
       {
         onSuccess: () => {
-          toast.success("Removed from your schedule");
+          toast.success("Deactivated");
           confirm.hide();
-          setDeleting(null);
+          setDeactivating(null);
         },
+        onError: (err) => toast.error(getFriendlyErrorMessage(err)),
+      },
+    );
+  }
+
+  function handleReactivate(entry: ScheduleEntry) {
+    updateEntry.mutate(
+      { id: entry.id, input: { isActive: true, scope: "ENTIRE_RULE" } },
+      {
+        onSuccess: () => toast.success("Reactivated"),
         onError: (err) => toast.error(getFriendlyErrorMessage(err)),
       },
     );
@@ -110,9 +123,16 @@ export function ScheduleEntryList() {
                     </div>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">
-                      {activity?.name ?? "Unknown activity"}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-sm font-medium">
+                        {activity?.name ?? "Unknown activity"}
+                      </p>
+                      {!entry.isActive && (
+                        <Badge variant="outline" className="text-xs">
+                          Inactive
+                        </Badge>
+                      )}
+                    </div>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                       {category && (
                         <CategoryBadge
@@ -141,17 +161,22 @@ export function ScheduleEntryList() {
                         <Pencil className="h-4 w-4" aria-hidden="true" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        variant="destructive"
-                        onClick={() => {
-                          setDeleting(entry);
-                          setDeleteScope("THIS_AND_FUTURE");
-                          confirm.show();
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                        Remove
-                      </DropdownMenuItem>
+                      {entry.isActive ? (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setDeactivating(entry);
+                            confirm.show();
+                          }}
+                        >
+                          <Archive className="h-4 w-4" aria-hidden="true" />
+                          Deactivate
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onClick={() => handleReactivate(entry)}>
+                          <ArchiveRestore className="h-4 w-4" aria-hidden="true" />
+                          Reactivate
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </li>
@@ -170,35 +195,12 @@ export function ScheduleEntryList() {
       <ConfirmDialog
         open={confirm.open}
         onOpenChange={confirm.onOpenChange}
-        title={`Remove this from your schedule?`}
-        description={
-          <div className="space-y-2 text-left">
-            <p>
-              Historical activity records are preserved either way. Choose what
-              this affects:
-            </p>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                checked={deleteScope === "THIS_AND_FUTURE"}
-                onChange={() => setDeleteScope("THIS_AND_FUTURE")}
-              />
-              From today onward
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                checked={deleteScope === "ENTIRE_RULE"}
-                onChange={() => setDeleteScope("ENTIRE_RULE")}
-              />
-              Entire recurring rule
-            </label>
-          </div>
-        }
-        confirmLabel="Remove"
+        title={`Deactivate "${activities?.find((a) => a.id === deactivating?.activityId)?.name ?? "this"}"?`}
+        description="It stops appearing on your daily schedule, but nothing is deleted — historical activity records are kept, and you can reactivate it anytime from this list."
+        confirmLabel="Deactivate"
         destructive
-        isConfirming={deleteEntry.isPending}
-        onConfirm={handleDelete}
+        isConfirming={deactivateEntry.isPending}
+        onConfirm={handleDeactivate}
       />
     </div>
   );

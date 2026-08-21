@@ -22,7 +22,7 @@ export interface WithConflictResolution {
 }
 
 export const schedulesApi = {
-  list: () => httpClient.get<ScheduleEntry[]>("/schedules").then((r) => r.data),
+  list: () => httpClient.get<ScheduleEntry[]>("/schedules", { params: { includeInactive: true } }).then((r) => r.data),
 
   create: (input: CreateScheduleEntryInput & WithConflictResolution) =>
     httpClient.post<ScheduleEntry>("/schedules", input).then((r) => r.data),
