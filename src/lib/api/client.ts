@@ -1,6 +1,6 @@
 import axios, { AxiosError, type AxiosInstance } from "axios";
 import { env } from "@/lib/env";
-import { ApiError, type ApiErrorPayload } from "@/types/api";
+import { ApiError, type ApiErrorCode, type ApiFieldError, type ScheduleConflictEntry } from "@/types/api";
 
 /**
  * The app is a static SPA (no Next.js server/proxy), so the browser talks to the
@@ -16,17 +16,58 @@ export const httpClient: AxiosInstance = axios.create({
   },
 });
 
+/**
+ * Every backend response is wrapped in a `{ success, data, meta }` /
+ * `{ success: false, error: { code, message, details }, requestId }` envelope
+ * (backend-requirements/01-architecture-and-principles.md §3). This interceptor
+ * unwraps `data` on success so every api/*.ts call site can treat `response.data`
+ * as the resource itself, matching this project's typed api client contracts.
+ */
+interface BackendEnvelope {
+  success: boolean;
+  data?: unknown;
+}
+
+interface BackendErrorBody {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details?: {
+      fieldErrors?: Record<string, string[] | undefined>;
+      formErrors?: string[];
+      conflicts?: ScheduleConflictEntry[];
+    };
+  };
+  requestId?: string;
+}
+
+httpClient.interceptors.response.use((response) => {
+  const body = response.data as BackendEnvelope | undefined;
+  if (body && typeof body === "object" && body.success === true && "data" in body) {
+    response.data = body.data;
+  }
+  return response;
+});
+
+function fieldErrorsFromDetails(details: BackendErrorBody["error"]["details"]): ApiFieldError[] | undefined {
+  if (!details?.fieldErrors) return undefined;
+  return Object.entries(details.fieldErrors)
+    .filter((entry): entry is [string, string[]] => Array.isArray(entry[1]) && entry[1].length > 0)
+    .map(([field, messages]) => ({ field, message: messages[0] as string }));
+}
+
 function normalizeError(error: AxiosError): ApiError {
   const status = error.response?.status ?? 0;
-  const body = error.response?.data as Partial<ApiErrorPayload> | undefined;
+  const body = error.response?.data as Partial<BackendErrorBody> | undefined;
 
-  if (body?.code && body?.message) {
+  if (body?.error?.code && body?.error?.message) {
     return new ApiError({
-      code: body.code,
-      message: body.message,
+      code: body.error.code as ApiErrorCode,
+      message: body.error.message,
       status,
-      fieldErrors: body.fieldErrors,
-      conflicts: body.conflicts,
+      fieldErrors: fieldErrorsFromDetails(body.error.details),
+      conflicts: body.error.details?.conflicts,
     });
   }
 
