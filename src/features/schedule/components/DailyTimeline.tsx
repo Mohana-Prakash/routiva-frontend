@@ -16,6 +16,8 @@ interface DailyTimelineProps {
   error?: unknown;
   onRetry: () => void;
   nowTime: string;
+  date: string;
+  timezone: string;
   emptyAction?: { label: string; onAction: () => void };
   /**
    * Activity-log id to auto-open once loaded — used for notification-click
@@ -25,7 +27,7 @@ interface DailyTimelineProps {
   initialLogId?: string | null;
 }
 
-export function DailyTimeline({ items, isLoading, isError, error, onRetry, nowTime, emptyAction, initialLogId }: DailyTimelineProps) {
+export function DailyTimeline({ items, isLoading, isError, error, onRetry, nowTime, date, timezone, emptyAction, initialLogId }: DailyTimelineProps) {
   const [selected, setSelected] = useState<ScheduleDayItem | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const consumedDeepLink = useRef(false);
@@ -59,7 +61,15 @@ export function DailyTimeline({ items, isLoading, isError, error, onRetry, nowTi
     <>
       <ul className="space-y-1">
         {sorted.map((item) => (
-          <TimelineItem key={item.id} item={item} nowTime={nowTime} onSelect={setSelected} highlighted={item.id === highlightedId} />
+          <TimelineItem
+            key={item.id}
+            item={item}
+            nowTime={nowTime}
+            date={date}
+            timezone={timezone}
+            onSelect={setSelected}
+            highlighted={item.id === highlightedId}
+          />
         ))}
       </ul>
       <ActivityDetailSheet item={selected} nowTime={nowTime} onOpenChange={(open) => !open && setSelected(null)} />

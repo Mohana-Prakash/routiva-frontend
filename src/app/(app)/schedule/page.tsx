@@ -41,6 +41,8 @@ export default function SchedulePage() {
             error={error}
             onRetry={() => refetch()}
             nowTime={date === todayDate ? nowTimeInTimeZone(timezone) : "00:00"}
+            date={date}
+            timezone={timezone}
             emptyAction={{ label: "+ Add Activity", onAction: () => setAdHocOpen(true) }}
           />
         </TabsContent>

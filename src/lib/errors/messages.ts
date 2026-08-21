@@ -14,6 +14,7 @@ const CODE_MESSAGES: Record<ApiErrorCode | "NETWORK_ERROR", string> = {
   RESOURCE_FORBIDDEN: "You do not have permission to do that.",
   SCHEDULE_CONFLICT: "This overlaps with another activity.",
   DUPLICATE_RESOURCE: "That already exists.",
+  INVALID_STATE: "That action can't be performed right now. Please refresh and try again.",
   RATE_LIMITED: "Too many requests. Please wait a moment and try again.",
   INTERNAL_ERROR: "Something went wrong on our end. Please try again.",
   NETWORK_ERROR: "Unable to reach the server. Check your connection and try again.",

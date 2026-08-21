@@ -78,6 +78,8 @@ function DashboardContent() {
           error={error}
           onRetry={() => refetch()}
           nowTime={nowTime}
+          date={data?.date ?? todayInTimeZone(timezone)}
+          timezone={timezone}
           emptyAction={{ label: "+ Add Activity", onAction: () => setAdHocOpen(true) }}
           initialLogId={notificationLogId}
         />

@@ -3,7 +3,7 @@
 import { BellRing, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
-import { formatDurationMinutes } from "@/lib/datetime/time";
+import { combineDateAndTime, formatDurationMinutes } from "@/lib/datetime/time";
 import { getTimelineDisplayStatus } from "../lib/timelineStatus";
 import { TIMELINE_STATUS_PRESENTATION } from "./timelineStatusPresentation";
 import {
@@ -19,6 +19,8 @@ import type { ScheduleDayItem } from "@/types/schedule";
 interface TimelineItemProps {
   item: ScheduleDayItem;
   nowTime: string;
+  date: string;
+  timezone: string;
   onSelect: (item: ScheduleDayItem) => void;
   highlighted?: boolean;
 }
@@ -26,6 +28,8 @@ interface TimelineItemProps {
 export function TimelineItem({
   item,
   nowTime,
+  date,
+  timezone,
   onSelect,
   highlighted,
 }: TimelineItemProps) {
@@ -55,10 +59,16 @@ export function TimelineItem({
     startActivity.isPending ||
     completeActivity.isPending ||
     skipActivity.isPending;
+  // Start/Complete only become available once the activity's scheduled time has
+  // actually arrived — you can't log time for something that hasn't happened yet.
+  // Skip is exempt: you can always skip ahead, planned or not.
+  const timeHasArrived =
+    combineDateAndTime(date, item.startTime, timezone).getTime() <= Date.now();
   // Planned items can be started, or completed directly for quick one-tap tracking
   // (frontend-requirements 03 §10) — actual timing may legitimately differ from plan.
-  const canStart = logStatus === "PLANNED";
-  const canComplete = logStatus === "IN_PROGRESS" || logStatus === "PLANNED";
+  const canStart = logStatus === "PLANNED" && timeHasArrived;
+  const canComplete =
+    logStatus === "IN_PROGRESS" || (logStatus === "PLANNED" && timeHasArrived);
   const canSkip = logStatus === "PLANNED" || logStatus === "IN_PROGRESS";
 
   return (
@@ -135,7 +145,7 @@ export function TimelineItem({
             className="mt-2.5 flex gap-2"
             onClick={(e) => e.stopPropagation()}
           >
-            {logStatus === "PLANNED" && (
+            {canStart && (
               <Button
                 size="sm"
                 variant="outline"
