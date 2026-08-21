@@ -157,9 +157,24 @@ export function ActivityDetailSheet({
               <div>
                 <dt className="text-xs text-muted-foreground mt-1">Actual</dt>
                 <dd>
-                  {log?.actualStart
-                    ? `${formatIsoToTime(log.actualStart, timezone)} – ${log.actualEnd ? formatIsoToTime(log.actualEnd, timezone) : "…"}`
-                    : "—"}
+                  {log?.actualStart ? (
+                    <>
+                      {formatIsoToTime(log.actualStart, timezone)} –{" "}
+                      {log.actualEnd ? formatIsoToTime(log.actualEnd, timezone) : "…"}
+                      {log.actualEnd && (
+                        <>
+                          {" "}
+                          (
+                          {formatDurationMinutes(
+                            (new Date(log.actualEnd).getTime() - new Date(log.actualStart).getTime()) / 60_000,
+                          )}
+                          )
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    "—"
+                  )}
                 </dd>
               </div>
               <div>

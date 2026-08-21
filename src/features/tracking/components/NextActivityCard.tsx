@@ -5,7 +5,7 @@ import { BellRing } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
 import { ActivityDetailSheet } from "@/features/schedule/components/ActivityDetailSheet";
-import { formatDurationMinutes, minutesUntil } from "@/lib/datetime/time";
+import { formatDurationMinutes, minutesBetween, minutesUntil } from "@/lib/datetime/time";
 import type { ScheduleDayItem } from "@/types/schedule";
 
 interface NextActivityCardProps {
@@ -31,7 +31,8 @@ export function NextActivityCard({ item, nowTime }: NextActivityCardProps) {
               {item.alarmEnabled && <BellRing className="h-3.5 w-3.5" aria-label="Alarm enabled" />}
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Starts at {item.startTime} · in {formatDurationMinutes(startsIn)}
+              {item.startTime} – {item.endTime} ({formatDurationMinutes(minutesBetween(item.startTime, item.endTime))}) · starts in{" "}
+              {formatDurationMinutes(startsIn)}
             </p>
           </button>
         </CardContent>

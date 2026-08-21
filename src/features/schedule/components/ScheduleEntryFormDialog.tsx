@@ -43,6 +43,7 @@ import { useConflictResolution } from "../hooks/useConflictResolution";
 import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
 import { RecurrenceField } from "./RecurrenceField";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
+import { formatDurationMinutes, isValidTimeString, minutesBetween } from "@/lib/datetime/time";
 import type {
   ConflictResolution,
   ScheduleEntry,
@@ -89,6 +90,13 @@ export function ScheduleEntryFormDialog({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, entry]);
+
+  const watchedStart = form.watch("startTime");
+  const watchedEnd = form.watch("endTime");
+  const liveDuration =
+    isValidTimeString(watchedStart) && isValidTimeString(watchedEnd)
+      ? formatDurationMinutes(minutesBetween(watchedStart, watchedEnd))
+      : null;
 
   function submit(
     values: ScheduleEntryFormValues,
@@ -229,6 +237,7 @@ export function ScheduleEntryFormDialog({
                     )}
                   />
                 </div>
+                {liveDuration && <p className="text-xs text-muted-foreground">Duration: {liveDuration}</p>}
                 <FormField
                   control={form.control}
                   name="recurrence"

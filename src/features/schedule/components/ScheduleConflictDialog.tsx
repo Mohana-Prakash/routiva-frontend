@@ -11,6 +11,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
+import { formatDurationMinutes, minutesBetween } from "@/lib/datetime/time";
 import type { ScheduleConflictEntry } from "@/types/api";
 import type { ConflictResolution } from "@/types/schedule";
 
@@ -43,7 +44,7 @@ export function ScheduleConflictDialog({ conflicts, onResolve }: ScheduleConflic
             <li key={c.id} className="flex items-center justify-between gap-2">
               <span className="font-medium">{c.activityName}</span>
               <span className="text-muted-foreground">
-                {c.startTime} – {c.endTime}
+                {c.startTime} – {c.endTime} ({formatDurationMinutes(minutesBetween(c.startTime, c.endTime))})
               </span>
             </li>
           ))}

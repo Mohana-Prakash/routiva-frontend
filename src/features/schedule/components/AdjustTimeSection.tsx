@@ -16,7 +16,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { formatDateLabel } from "@/lib/datetime/time";
+import { formatDateLabel, formatDurationMinutes, isValidTimeString, minutesBetween } from "@/lib/datetime/time";
 import {
   moveExceptionSchema,
   type MoveExceptionFormValues,
@@ -107,6 +107,12 @@ export function AdjustTimeSection({ item, onSaved }: AdjustTimeSectionProps) {
   }
 
   const isPending = createException.isPending || updateException.isPending;
+  const watchedStart = form.watch("startTime");
+  const watchedEnd = form.watch("endTime");
+  const liveDuration =
+    isValidTimeString(watchedStart) && isValidTimeString(watchedEnd)
+      ? formatDurationMinutes(minutesBetween(watchedStart, watchedEnd))
+      : null;
 
   return (
     <div className="rounded-lg border p-3">
@@ -159,6 +165,7 @@ export function AdjustTimeSection({ item, onSaved }: AdjustTimeSectionProps) {
                 )}
               />
             </div>
+            {liveDuration && <p className="text-xs text-muted-foreground">Duration: {liveDuration}</p>}
             <FormField
               control={form.control}
               name="reason"

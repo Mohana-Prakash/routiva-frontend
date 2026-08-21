@@ -41,7 +41,7 @@ import { useConflictResolution } from "../hooks/useConflictResolution";
 import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
 import { ActivityFormDialog } from "@/features/activities/components/ActivityFormDialog";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
-import { nowTimeInTimeZone } from "@/lib/datetime/time";
+import { formatDurationMinutes, isValidTimeString, minutesBetween, nowTimeInTimeZone } from "@/lib/datetime/time";
 import { useAuth } from "@/features/auth/AuthProvider";
 import type { ConflictResolution } from "@/types/schedule";
 
@@ -96,6 +96,13 @@ export function AdHocActivityDialog({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, date]);
+
+  const watchedStart = form.watch("startTime");
+  const watchedEnd = form.watch("endTime");
+  const liveDuration =
+    isValidTimeString(watchedStart) && isValidTimeString(watchedEnd)
+      ? formatDurationMinutes(minutesBetween(watchedStart, watchedEnd))
+      : null;
 
   function submit(
     values: AdHocActivityFormValues,
@@ -236,6 +243,7 @@ export function AdHocActivityDialog({
                     )}
                   />
                 </div>
+                {liveDuration && <p className="text-xs text-muted-foreground">Duration: {liveDuration}</p>}
                 <FormField
                   control={form.control}
                   name="reason"

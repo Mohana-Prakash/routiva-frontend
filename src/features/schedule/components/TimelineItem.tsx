@@ -3,7 +3,7 @@
 import { BellRing, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
-import { combineDateAndTime, formatDurationMinutes } from "@/lib/datetime/time";
+import { combineDateAndTime, formatDurationMinutes, minutesBetween } from "@/lib/datetime/time";
 import { getTimelineDisplayStatus } from "../lib/timelineStatus";
 import { TIMELINE_STATUS_PRESENTATION } from "./timelineStatusPresentation";
 import {
@@ -78,6 +78,9 @@ export function TimelineItem({
       <div className="w-14 shrink-0 pt-2 text-right text-xs text-muted-foreground tabular-nums">
         <div>{item.startTime}</div>
         <div>{item.endTime}</div>
+        <div className="mt-0.5 text-[10px] text-muted-foreground/70">
+          {formatDurationMinutes(minutesBetween(item.startTime, item.endTime))}
+        </div>
       </div>
 
       {/* A real <button> can't contain the Start/Complete/Skip buttons below without

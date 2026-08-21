@@ -19,6 +19,7 @@ import { ErrorState } from "@/components/shared/ErrorState";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
+import { formatDurationMinutes, minutesBetween } from "@/lib/datetime/time";
 import { useScheduleEntries } from "../hooks/useScheduleEntries";
 import { useDeleteScheduleEntry } from "../hooks/useScheduleEntryMutations";
 import { useActivities } from "@/features/activities/hooks/useActivities";
@@ -104,6 +105,9 @@ export function ScheduleEntryList() {
                   <div className="w-20 shrink-0 text-xs text-muted-foreground mt-1 tabular-nums">
                     <div>{entry.startTime}</div>
                     <div>{entry.endTime}</div>
+                    <div className="mt-0.5 text-[10px] text-muted-foreground/70">
+                      {formatDurationMinutes(minutesBetween(entry.startTime, entry.endTime))}
+                    </div>
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">

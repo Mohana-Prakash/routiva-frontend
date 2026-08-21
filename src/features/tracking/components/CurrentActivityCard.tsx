@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
 import { ActivityDetailSheet } from "@/features/schedule/components/ActivityDetailSheet";
-import { formatDurationMinutes, minutesUntil } from "@/lib/datetime/time";
+import { formatDurationMinutes, minutesBetween, minutesUntil } from "@/lib/datetime/time";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { useCompleteActivity, useSkipActivity } from "../hooks/useTrackingMutations";
 import type { ScheduleDayItem } from "@/types/schedule";
@@ -35,7 +35,7 @@ export function CurrentActivityCard({ item, nowTime }: CurrentActivityCardProps)
             <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <CategoryBadge name={item.categoryName} color={item.categoryColor} icon={item.categoryIcon} />
               <span>
-                {item.startTime} – {item.endTime}
+                {item.startTime} – {item.endTime} ({formatDurationMinutes(minutesBetween(item.startTime, item.endTime))})
               </span>
               {item.alarmEnabled && <BellRing className="h-3.5 w-3.5" aria-label="Alarm enabled" />}
             </div>

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useCorrectActualTiming } from "@/features/tracking/hooks/useTrackingMutations";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
-import { formatIsoToTime, combineDateAndTime } from "@/lib/datetime/time";
+import { formatIsoToTime, combineDateAndTime, formatDurationMinutes, isValidTimeString, minutesBetween } from "@/lib/datetime/time";
 import type { ActivityLog } from "@/types/activity-log";
 
 interface CorrectActualTimingSectionProps {
@@ -31,6 +31,10 @@ export function CorrectActualTimingSection({ date, log }: CorrectActualTimingSec
   const [actualEnd, setActualEnd] = useState(log.actualEnd ? formatIsoToTime(log.actualEnd, timezone) : "");
   const [notes, setNotes] = useState(log.notes ?? "");
   const correctTiming = useCorrectActualTiming();
+  const liveDuration =
+    isValidTimeString(actualStart) && isValidTimeString(actualEnd)
+      ? formatDurationMinutes(minutesBetween(actualStart, actualEnd))
+      : null;
 
   function handleSave() {
     correctTiming.mutate(
@@ -73,6 +77,7 @@ export function CorrectActualTimingSection({ date, log }: CorrectActualTimingSec
           <Input id="actual-end" type="time" value={actualEnd} onChange={(e) => setActualEnd(e.target.value)} />
         </div>
       </div>
+      {liveDuration && <p className="text-xs text-muted-foreground">Duration: {liveDuration}</p>}
       <div className="space-y-1.5">
         <Label htmlFor="actual-notes">Note</Label>
         <Textarea id="actual-notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
