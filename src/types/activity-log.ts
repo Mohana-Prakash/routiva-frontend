@@ -1,0 +1,68 @@
+export type ActivityLogStatus =
+  | "PLANNED"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "SKIPPED"
+  | "CANCELLED"
+  | "MISSED"
+  | "ADJUSTED";
+
+/** Immutable-once-recorded historical record (backend-requirements 05). */
+export interface ActivityLog {
+  id: string;
+  userId: string;
+  activityId: string;
+  scheduleEntryId: string | null;
+  exceptionId: string | null;
+  activityDate: string; // "YYYY-MM-DD"
+  plannedStart: string | null;
+  plannedEnd: string | null;
+  actualStart: string | null;
+  actualEnd: string | null;
+  status: ActivityLogStatus;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  activityNameSnapshot?: string;
+  categoryNameSnapshot?: string;
+}
+
+export interface CorrectActualTimingInput {
+  actualStart?: string | null;
+  actualEnd?: string | null;
+  notes?: string | null;
+}
+
+export interface ActivityLogFilters {
+  from: string;
+  to: string;
+  status?: ActivityLogStatus;
+}
+
+export interface DailySummary {
+  date: string;
+  completedCount: number;
+  skippedCount: number;
+  missedCount: number;
+  upcomingCount: number;
+  adjustedCount: number;
+  plannedDurationMinutes: number;
+  actualDurationMinutes: number;
+  completionPercentage: number;
+}
+
+/**
+ * UI-only presentational status derived from ActivityLogStatus plus the current
+ * wall-clock time (frontend-requirements 02 §4). This is presentation logic, not a
+ * duplicated business calculation: "is this now / in the future" is inherently a
+ * client-side concern.
+ */
+export type TimelineDisplayStatus =
+  | "UPCOMING"
+  | "CURRENT"
+  | "COMPLETED"
+  | "SKIPPED"
+  | "CANCELLED"
+  | "ADJUSTED"
+  | "MISSED";

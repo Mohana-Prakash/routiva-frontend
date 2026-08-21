@@ -1,0 +1,38 @@
+"use client";
+
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { formatDateLabel } from "@/lib/datetime/time";
+
+interface DayNavigatorProps {
+  date: string;
+  todayDate: string;
+  onChange: (date: string) => void;
+}
+
+export function DayNavigator({ date, todayDate, onChange }: DayNavigatorProps) {
+  function shiftDay(offsetDays: number) {
+    const next = new Date(`${date}T00:00:00`);
+    next.setDate(next.getDate() + offsetDays);
+    onChange(next.toISOString().slice(0, 10));
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button variant="outline" size="icon-sm" aria-label="Previous day" onClick={() => shiftDay(-1)}>
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      <Input type="date" value={date} onChange={(e) => onChange(e.target.value)} className="w-40" aria-label="Select date" />
+      <Button variant="outline" size="icon-sm" aria-label="Next day" onClick={() => shiftDay(1)}>
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+      {date !== todayDate && (
+        <Button variant="ghost" size="sm" onClick={() => onChange(todayDate)}>
+          Today
+        </Button>
+      )}
+      <span className="text-sm font-medium text-muted-foreground">{formatDateLabel(date)}</span>
+    </div>
+  );
+}
