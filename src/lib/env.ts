@@ -10,5 +10,5 @@ function requireEnv(name: string, value: string | undefined): string {
 export const env = {
   apiUrl: requireEnv("NEXT_PUBLIC_API_URL", process.env.NEXT_PUBLIC_API_URL),
   vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "",
-  appName: process.env.NEXT_PUBLIC_APP_NAME ?? "My Day Tracker",
+  appName: process.env.NEXT_PUBLIC_APP_NAME ?? "Routiva",
 };

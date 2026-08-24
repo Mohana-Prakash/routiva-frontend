@@ -1,4 +1,4 @@
-# My Day Tracker — Frontend
+# Routiva — Frontend
 
 Personal Schedule & Activity Tracker — a multi-user web app for building a daily
 schedule, tracking what actually happened, and reviewing progress over time.
@@ -47,15 +47,15 @@ Turbopack (Next 16's default) yet.
 
 ## Scripts
 
-| Script | What it does |
-|---|---|
-| `npm run dev` | Dev server (webpack) |
-| `npm run build` | Production build → static export in `out/` |
-| `npm run start` | Serve the build with `next start` (local verification only — the real deploy target is a static host) |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run lint` | ESLint |
-| `npm run test` | Vitest (single run) |
-| `npm run test:watch` | Vitest (watch mode) |
+| Script               | What it does                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------------- |
+| `npm run dev`        | Dev server (webpack)                                                                                  |
+| `npm run build`      | Production build → static export in `out/`                                                            |
+| `npm run start`      | Serve the build with `next start` (local verification only — the real deploy target is a static host) |
+| `npm run typecheck`  | `tsc --noEmit`                                                                                        |
+| `npm run lint`       | ESLint                                                                                                |
+| `npm run test`       | Vitest (single run)                                                                                   |
+| `npm run test:watch` | Vitest (watch mode)                                                                                   |
 
 ## Environment variables
 

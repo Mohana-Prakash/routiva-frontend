@@ -1,6 +1,6 @@
 {
-  "name": "My Day Tracker",
-  "short_name": "My Day",
+  "name": "Routiva",
+  "short_name": "Routiva",
   "description": "Personal schedule and activity tracker — plan your day, track what actually happened, and see your progress.",
   "start_url": "/dashboard/",
   "scope": "/",

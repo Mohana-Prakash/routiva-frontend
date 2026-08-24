@@ -12,8 +12,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "My Day Tracker",
-  description: "Personal schedule and activity tracker — plan your day, track what actually happened, and see your progress.",
+  title: "Routiva",
+  description:
+    "Personal schedule and activity tracker — plan your day, track what actually happened, and see your progress.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -30,7 +31,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${inter.variable} h-full antialiased`}
+    >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <Providers>{children}</Providers>
