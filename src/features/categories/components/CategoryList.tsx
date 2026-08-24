@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, Pencil, Archive, ArchiveRestore, Trash2, Tag } from "lucide-react";
+import { MoreVertical, Pencil, Archive, ArchiveRestore, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,38 +18,47 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { useCategories } from "../hooks/useCategories";
-import { useDeleteCategory, useUpdateCategory } from "../hooks/useCategoryMutations";
+import { useUpdateCategory } from "../hooks/useCategoryMutations";
+import { useActivities } from "@/features/activities/hooks/useActivities";
 import { CategoryFormDialog } from "./CategoryFormDialog";
 import type { Category } from "@/types/category";
 
 export function CategoryList() {
   const { data: categories, isLoading, isError, error, refetch } = useCategories();
+  const { data: activities } = useActivities();
   const [editing, setEditing] = useState<Category | null | undefined>(undefined);
-  const [deleting, setDeleting] = useState<Category | null>(null);
-  const deleteCategory = useDeleteCategory();
+  const [deactivating, setDeactivating] = useState<Category | null>(null);
   const updateCategory = useUpdateCategory();
-  const confirm = useConfirmDialog();
+  const deactivateConfirm = useConfirmDialog();
 
   if (isLoading) return <LoadingSkeletonList count={4} />;
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
 
-  function handleToggleActive(category: Category) {
+  function activeActivityCount(categoryId: string) {
+    return activities?.filter((a) => a.categoryId === categoryId && a.isActive).length ?? 0;
+  }
+
+  function setCategoryActive(category: Category, isActive: boolean) {
     updateCategory.mutate(
-      { id: category.id, input: { isActive: !category.isActive } },
+      { id: category.id, input: { isActive } },
       { onError: (err) => toast.error(getFriendlyErrorMessage(err)) },
     );
   }
 
-  function handleDelete() {
-    if (!deleting) return;
-    deleteCategory.mutate(deleting.id, {
-      onSuccess: () => {
-        toast.success("Category deleted");
-        confirm.hide();
-        setDeleting(null);
-      },
-      onError: (err) => toast.error(getFriendlyErrorMessage(err)),
-    });
+  function handleToggleActive(category: Category) {
+    if (category.isActive && activeActivityCount(category.id) > 0) {
+      setDeactivating(category);
+      deactivateConfirm.show();
+      return;
+    }
+    setCategoryActive(category, !category.isActive);
+  }
+
+  function handleConfirmDeactivate() {
+    if (!deactivating) return;
+    setCategoryActive(deactivating, false);
+    deactivateConfirm.hide();
+    setDeactivating(null);
   }
 
   return (
@@ -114,16 +123,6 @@ export function CategoryList() {
                           </>
                         )}
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        variant="destructive"
-                        onClick={() => {
-                          setDeleting(category);
-                          confirm.show();
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                        Delete
-                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </li>
@@ -136,14 +135,18 @@ export function CategoryList() {
       <CategoryFormDialog open={editing !== undefined} onOpenChange={(open) => !open && setEditing(undefined)} category={editing} />
 
       <ConfirmDialog
-        open={confirm.open}
-        onOpenChange={confirm.onOpenChange}
-        title={`Delete "${deleting?.name}"?`}
-        description="This permanently removes the category. If any activities use it, it can't be deleted — deactivate it instead."
-        confirmLabel="Delete"
+        open={deactivateConfirm.open}
+        onOpenChange={deactivateConfirm.onOpenChange}
+        title={`Deactivate "${deactivating?.name}"?`}
+        description={
+          deactivating
+            ? `${activeActivityCount(deactivating.id)} ${activeActivityCount(deactivating.id) === 1 ? "activity is" : "activities are"} still active under this category. Deactivating it will also deactivate ${activeActivityCount(deactivating.id) === 1 ? "that activity" : "those activities"}.`
+            : ""
+        }
+        confirmLabel="Deactivate"
         destructive
-        isConfirming={deleteCategory.isPending}
-        onConfirm={handleDelete}
+        isConfirming={updateCategory.isPending}
+        onConfirm={handleConfirmDeactivate}
       />
     </div>
   );

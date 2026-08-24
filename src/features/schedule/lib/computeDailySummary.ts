@@ -19,7 +19,10 @@ export function computeDailySummary(date: string, items: ScheduleDayItem[]): Dai
   let actualDurationMinutes = 0;
 
   for (const item of items) {
-    plannedDurationMinutes += minutesBetween(item.startTime, item.endTime);
+    // Timeless items (no fixed slot) have no planned duration to count.
+    if (item.startTime && item.endTime) {
+      plannedDurationMinutes += minutesBetween(item.startTime, item.endTime);
+    }
 
     const status = item.activityLog?.status;
     switch (status) {

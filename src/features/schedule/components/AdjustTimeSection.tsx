@@ -50,8 +50,9 @@ export function AdjustTimeSection({ item, onSaved }: AdjustTimeSectionProps) {
   const form = useForm<MoveExceptionFormValues>({
     resolver: zodResolver(moveExceptionSchema),
     defaultValues: {
-      startTime: item.startTime,
-      endTime: item.endTime,
+      // Only ever mounted for timed items (see ActivityDetailSheet's isTimeless guard).
+      startTime: item.startTime ?? "",
+      endTime: item.endTime ?? "",
       reason: item.notes ?? "",
     },
   });

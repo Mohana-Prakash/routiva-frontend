@@ -14,24 +14,37 @@ vi.mock("@/lib/api/tracking", () => ({
   },
 }));
 
-// Start/Complete are gated on the `date`/startTime passed to TimelineItem having
-// already arrived relative to the real wall clock. Using a fixed past/future date
-// (rather than mocking the clock) keeps these tests deterministic without fighting
-// userEvent's own timers.
-const PAST_DATE = "2020-01-01";
-const FUTURE_DATE = "2099-01-01";
+// Start/Complete/Skip are now gated on both a lower bound (startTime arrived) and an upper
+// bound (endTime not yet passed) relative to the real wall clock. Rather than mocking the
+// clock (which fights userEvent's own timers), these offsets are computed from the actual
+// current UTC time so "arrived but not ended" and "ended" are both deterministic regardless
+// of when the suite runs — matching timezone="UTC" used in every render below.
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+function hhmm(d: Date) {
+  return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+}
+const now = new Date();
+const TODAY = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}`;
+const ARRIVED_START = hhmm(new Date(now.getTime() - 5 * 60_000)); // 5 min ago
+const NOT_ENDED_END = hhmm(new Date(now.getTime() + 55 * 60_000)); // 55 min from now
+const ENDED_START = hhmm(new Date(now.getTime() - 60 * 60_000)); // 1h ago
+const ENDED_END = hhmm(new Date(now.getTime() - 1 * 60_000)); // 1 min ago
+const NOT_ARRIVED_START = hhmm(new Date(now.getTime() + 60 * 60_000)); // 1h from now
+const NOT_ARRIVED_END = hhmm(new Date(now.getTime() + 120 * 60_000)); // 2h from now
 
 const plannedItem: ScheduleDayItem = {
   id: "item-1",
-  date: PAST_DATE,
+  date: TODAY,
   activityId: "a1",
   activityName: "Meditation",
   categoryId: "c1",
   categoryName: "Spiritual",
   categoryColor: "#6366F1",
   categoryIcon: "sparkles",
-  startTime: "18:00",
-  endTime: "18:30",
+  startTime: ARRIVED_START,
+  endTime: NOT_ENDED_END,
   source: "BASE",
   scheduleEntryId: "se1",
   exceptionId: null,
@@ -46,7 +59,7 @@ const plannedItem: ScheduleDayItem = {
     activityId: "a1",
     scheduleEntryId: "se1",
     exceptionId: null,
-    activityDate: PAST_DATE,
+    activityDate: TODAY,
     plannedStart: null,
     plannedEnd: null,
     actualStart: null,
@@ -69,7 +82,7 @@ describe("TimelineItem", () => {
   it("shows Start/Complete/Skip for a planned activity and calls the right API on each", async () => {
     const user = userEvent.setup();
     renderWithQueryClient(
-      <TimelineItem item={plannedItem} nowTime="18:15" date={PAST_DATE} timezone="UTC" onSelect={() => {}} />,
+      <TimelineItem item={plannedItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
     );
 
     expect(screen.getByText("Meditation")).toBeInTheDocument();
@@ -81,11 +94,24 @@ describe("TimelineItem", () => {
     await waitFor(() => expect(trackingApi.skip).toHaveBeenCalledWith("log-1"));
   });
 
+  it('shows "End" instead of "Complete" once the activity is in progress', () => {
+    const inProgressItem: ScheduleDayItem = {
+      ...plannedItem,
+      activityLog: { ...plannedItem.activityLog!, status: "IN_PROGRESS", actualStart: new Date().toISOString() },
+    };
+    renderWithQueryClient(
+      <TimelineItem item={inProgressItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
+    );
+
+    expect(screen.getByRole("button", { name: "End" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
+  });
+
   it("calls onSelect with the item when the card body is activated, not when an action button is clicked", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
     renderWithQueryClient(
-      <TimelineItem item={plannedItem} nowTime="18:15" date={PAST_DATE} timezone="UTC" onSelect={onSelect} />,
+      <TimelineItem item={plannedItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={onSelect} />,
     );
 
     await user.click(screen.getByRole("button", { name: "Skip" }));
@@ -106,22 +132,34 @@ describe("TimelineItem", () => {
       },
     };
     renderWithQueryClient(
-      <TimelineItem item={completedItem} nowTime="19:00" date={PAST_DATE} timezone="UTC" onSelect={() => {}} />,
+      <TimelineItem item={completedItem} nowTime="19:00" date={TODAY} timezone="UTC" onSelect={() => {}} />,
     );
 
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "End" })).not.toBeInTheDocument();
     expect(screen.getByText(/Actual: 27m/)).toBeInTheDocument();
   });
 
   it("hides Start and Complete until the scheduled time arrives, but keeps Skip available", () => {
-    const futureItem: ScheduleDayItem = { ...plannedItem, date: FUTURE_DATE };
+    const futureItem: ScheduleDayItem = { ...plannedItem, startTime: NOT_ARRIVED_START, endTime: NOT_ARRIVED_END };
     renderWithQueryClient(
-      <TimelineItem item={futureItem} nowTime="18:15" date={FUTURE_DATE} timezone="UTC" onSelect={() => {}} />,
+      <TimelineItem item={futureItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
     );
 
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Skip" })).toBeInTheDocument();
+  });
+
+  it("hides every action, including Skip, once the scheduled end time has passed", () => {
+    const overdueItem: ScheduleDayItem = { ...plannedItem, startTime: ENDED_START, endTime: ENDED_END };
+    renderWithQueryClient(
+      <TimelineItem item={overdueItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument();
   });
 });

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const activitySchema = z
   .object({
-    categoryId: z.string().min(1, "Choose a category"),
+    categoryId: z.string().optional(),
     name: z.string().trim().min(1, "Name is required").max(120, "Name is too long"),
     description: z.string().trim().max(500, "Notes are too long").optional(),
     defaultDurationMinutes: z

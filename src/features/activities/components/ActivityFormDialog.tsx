@@ -19,6 +19,8 @@ import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import type { Activity } from "@/types/activity";
 
+const NO_CATEGORY = "__none__";
+
 interface ActivityFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -35,7 +37,7 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFor
   const form = useForm<ActivityFormValues>({
     resolver: zodResolver(activitySchema),
     defaultValues: {
-      categoryId: "",
+      categoryId: NO_CATEGORY,
       name: "",
       description: "",
       defaultDurationMinutes: 30,
@@ -47,7 +49,7 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFor
   useEffect(() => {
     if (open) {
       form.reset({
-        categoryId: activity?.categoryId ?? categories?.[0]?.id ?? "",
+        categoryId: activity?.categoryId ?? NO_CATEGORY,
         name: activity?.name ?? "",
         description: activity?.description ?? "",
         defaultDurationMinutes: activity?.defaultDurationMinutes ?? 30,
@@ -61,8 +63,12 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFor
   const alarmEnabled = form.watch("alarmEnabled");
 
   function onSubmit(values: ActivityFormValues) {
+    // On edit, an explicit `null` clears an existing category; omitting the field entirely
+    // (undefined) leaves it untouched, which is only ever correct for a brand-new activity.
+    const categoryId =
+      values.categoryId === NO_CATEGORY ? (isEditing ? null : undefined) : values.categoryId;
     const payload = {
-      categoryId: values.categoryId,
+      categoryId,
       name: values.name,
       description: values.description || null,
       defaultDurationMinutes: values.defaultDurationMinutes ?? null,
@@ -92,8 +98,6 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFor
 
         {categoriesLoading ? (
           <LoadingSkeleton className="h-48 w-full" />
-        ) : !categories?.length ? (
-          <p className="text-sm text-muted-foreground">Create a category first before adding activities.</p>
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -115,18 +119,22 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFor
                 name="categoryId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>Category (optional)</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
                         onValueChange={(v) => v && field.onChange(v)}
-                        items={Object.fromEntries(categories.map((category) => [category.id, category.name]))}
+                        items={{
+                          [NO_CATEGORY]: "No category",
+                          ...Object.fromEntries((categories ?? []).map((category) => [category.id, category.name])),
+                        }}
                       >
                         <SelectTrigger id={field.name} className="w-full">
-                          <SelectValue placeholder="Choose a category" />
+                          <SelectValue placeholder="No category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {categories.map((category) => (
+                          <SelectItem value={NO_CATEGORY}>No category</SelectItem>
+                          {(categories ?? []).map((category) => (
                             <SelectItem key={category.id} value={category.id}>
                               {category.name}
                             </SelectItem>

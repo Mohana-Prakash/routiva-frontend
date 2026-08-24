@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -77,6 +78,7 @@ export function AdHocActivityDialog({
     defaultValues: {
       activityId: "",
       date: date ?? "",
+      timeless: false,
       startTime: "",
       endTime: "",
       reason: "",
@@ -89,6 +91,7 @@ export function AdHocActivityDialog({
       form.reset({
         activityId: activities?.[0]?.id ?? "",
         date: date ?? "",
+        timeless: false,
         startTime: now,
         endTime: now,
         reason: "",
@@ -97,10 +100,11 @@ export function AdHocActivityDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, date]);
 
+  const isTimeless = form.watch("timeless");
   const watchedStart = form.watch("startTime");
   const watchedEnd = form.watch("endTime");
   const liveDuration =
-    isValidTimeString(watchedStart) && isValidTimeString(watchedEnd)
+    !isTimeless && watchedStart && watchedEnd && isValidTimeString(watchedStart) && isValidTimeString(watchedEnd)
       ? formatDurationMinutes(minutesBetween(watchedStart, watchedEnd))
       : null;
 
@@ -112,8 +116,8 @@ export function AdHocActivityDialog({
       {
         activityId: values.activityId,
         date: values.date,
-        startTime: values.startTime,
-        endTime: values.endTime,
+        startTime: values.timeless ? null : values.startTime ?? null,
+        endTime: values.timeless ? null : values.endTime ?? null,
         action: "ADD",
         reason: values.reason || null,
         resolution,
@@ -215,35 +219,54 @@ export function AdHocActivityDialog({
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField
-                    control={form.control}
-                    name="startTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Start</FormLabel>
-                        <FormControl>
-                          <Input type="time" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="endTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End</FormLabel>
-                        <FormControl>
-                          <Input type="time" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                {liveDuration && <p className="text-xs text-muted-foreground">Duration: {liveDuration}</p>}
+                <FormField
+                  control={form.control}
+                  name="timeless"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <FormLabel htmlFor="adhoc-timeless">Timeless</FormLabel>
+                        <Switch id="adhoc-timeless" checked={field.value} onCheckedChange={field.onChange} />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        No fixed time — available anytime during this date instead of a specific slot.
+                      </p>
+                    </FormItem>
+                  )}
+                />
+                {!isTimeless && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField
+                        control={form.control}
+                        name="startTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start</FormLabel>
+                            <FormControl>
+                              <Input type="time" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="endTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>End</FormLabel>
+                            <FormControl>
+                              <Input type="time" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    {liveDuration && <p className="text-xs text-muted-foreground">Duration: {liveDuration}</p>}
+                  </>
+                )}
                 <FormField
                   control={form.control}
                   name="reason"

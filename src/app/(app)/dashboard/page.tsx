@@ -41,9 +41,16 @@ function DashboardContent() {
   const current = useMemo(() => items?.find((item) => item.activityLog?.status === "IN_PROGRESS"), [items]);
 
   const next = useMemo(() => {
-    const upcoming = items?.filter((item) => !item.activityLog || item.activityLog.status === "PLANNED") ?? [];
+    // Timeless items have no "starts in X" to rank by, so they never compete for this slot —
+    // they're always available and show up in the timeline instead.
+    const upcoming =
+      items?.filter(
+        (item) => item.startTime && item.endTime && (!item.activityLog || item.activityLog.status === "PLANNED"),
+      ) ?? [];
     if (upcoming.length === 0) return undefined;
-    return [...upcoming].sort((a, b) => minutesUntil(a.startTime, nowTime) - minutesUntil(b.startTime, nowTime))[0];
+    return [...upcoming].sort(
+      (a, b) => minutesUntil(a.startTime as string, nowTime) - minutesUntil(b.startTime as string, nowTime),
+    )[0];
   }, [items, nowTime]);
 
   const summary = useMemo(() => (items ? computeDailySummary(data!.date, items) : undefined), [items, data]);

@@ -116,11 +116,17 @@ export function ScheduleEntryList() {
               return (
                 <li key={entry.id} className="flex items-center gap-3 p-3">
                   <div className="w-20 shrink-0 text-xs text-muted-foreground mt-1 tabular-nums">
-                    <div>{entry.startTime}</div>
-                    <div>{entry.endTime}</div>
-                    <div className="mt-0.5 text-[10px] text-muted-foreground/70">
-                      {formatDurationMinutes(minutesBetween(entry.startTime, entry.endTime))}
-                    </div>
+                    {entry.startTime && entry.endTime ? (
+                      <>
+                        <div>{entry.startTime}</div>
+                        <div>{entry.endTime}</div>
+                        <div className="mt-0.5 text-[10px] text-muted-foreground/70">
+                          {formatDurationMinutes(minutesBetween(entry.startTime, entry.endTime))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-muted-foreground/70">Anytime</div>
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">

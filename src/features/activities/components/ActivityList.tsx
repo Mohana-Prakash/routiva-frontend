@@ -59,8 +59,8 @@ export function ActivityList() {
   if (isLoading) return <LoadingSkeletonList count={4} />;
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
 
-  function categoryFor(categoryId: string) {
-    return categories?.find((c) => c.id === categoryId);
+  function categoryFor(categoryId: string | null) {
+    return categoryId ? categories?.find((c) => c.id === categoryId) : undefined;
   }
 
   function handleToggleActive(activity: Activity) {
@@ -116,12 +116,14 @@ export function ActivityList() {
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
-                      {category && (
+                      {category ? (
                         <CategoryBadge
                           name={category.name}
                           color={category.color}
                           icon={category.icon}
                         />
+                      ) : (
+                        <span className="text-muted-foreground/70">No category</span>
                       )}
                       {activity.defaultDurationMinutes && (
                         <span>

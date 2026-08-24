@@ -16,6 +16,4 @@ export const categoriesApi = {
   create: (input: CreateCategoryInput) => httpClient.post<Category>("/categories", input).then((r) => r.data),
 
   update: (id: string, input: UpdateCategoryInput) => httpClient.patch<Category>(`/categories/${id}`, input).then((r) => r.data),
-
-  remove: (id: string) => httpClient.delete<void>(`/categories/${id}`).then((r) => r.data),
 };

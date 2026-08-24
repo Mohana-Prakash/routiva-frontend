@@ -24,6 +24,8 @@ export interface CategoryReportItem {
   plannedMinutes: number;
   actualMinutes: number;
   completionRate: number;
+  completedCount: number;
+  totalCount: number;
 }
 
 /** One row of `GET /reports/activities` (planned vs actual + consistency per activity). */

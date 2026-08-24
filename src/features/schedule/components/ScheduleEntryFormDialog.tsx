@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -73,6 +74,7 @@ export function ScheduleEntryFormDialog({
     resolver: zodResolver(scheduleEntrySchema),
     defaultValues: {
       activityId: "",
+      timeless: false,
       startTime: "",
       endTime: "",
       recurrence: { type: "DAILY" },
@@ -83,6 +85,7 @@ export function ScheduleEntryFormDialog({
     if (open) {
       form.reset({
         activityId: entry?.activityId ?? activities?.[0]?.id ?? "",
+        timeless: !!entry && !entry.startTime,
         startTime: entry?.startTime ?? "",
         endTime: entry?.endTime ?? "",
         recurrence: entry?.recurrence ?? { type: "DAILY" },
@@ -91,10 +94,11 @@ export function ScheduleEntryFormDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, entry]);
 
+  const isTimeless = form.watch("timeless");
   const watchedStart = form.watch("startTime");
   const watchedEnd = form.watch("endTime");
   const liveDuration =
-    isValidTimeString(watchedStart) && isValidTimeString(watchedEnd)
+    !isTimeless && watchedStart && watchedEnd && isValidTimeString(watchedStart) && isValidTimeString(watchedEnd)
       ? formatDurationMinutes(minutesBetween(watchedStart, watchedEnd))
       : null;
 
@@ -121,13 +125,16 @@ export function ScheduleEntryFormDialog({
     };
 
     if (isEditing && entry) {
+      // Update uses an explicit `timeless` flag rather than null times — startTime/endTime
+      // are otherwise independent partial-update fields (see UpdateScheduleEntryInput).
       updateEntry.mutate(
         {
           id: entry.id,
           input: {
             activityId: values.activityId,
-            startTime: values.startTime,
-            endTime: values.endTime,
+            startTime: values.timeless ? undefined : values.startTime,
+            endTime: values.timeless ? undefined : values.endTime,
+            timeless: values.timeless,
             recurrence: values.recurrence,
             scope,
             resolution,
@@ -136,11 +143,13 @@ export function ScheduleEntryFormDialog({
         { onSuccess, onError },
       );
     } else {
+      const startTime = values.timeless ? null : values.startTime ?? null;
+      const endTime = values.timeless ? null : values.endTime ?? null;
       createEntry.mutate(
         {
           activityId: values.activityId,
-          startTime: values.startTime,
-          endTime: values.endTime,
+          startTime,
+          endTime,
           recurrence: values.recurrence,
           resolution,
         },
@@ -209,35 +218,54 @@ export function ScheduleEntryFormDialog({
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField
-                    control={form.control}
-                    name="startTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Start</FormLabel>
-                        <FormControl>
-                          <Input type="time" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="endTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End</FormLabel>
-                        <FormControl>
-                          <Input type="time" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                {liveDuration && <p className="text-xs text-muted-foreground">Duration: {liveDuration}</p>}
+                <FormField
+                  control={form.control}
+                  name="timeless"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <FormLabel htmlFor="entry-timeless">Timeless</FormLabel>
+                        <Switch id="entry-timeless" checked={field.value} onCheckedChange={field.onChange} />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        No fixed time — available anytime during the day instead of a specific slot.
+                      </p>
+                    </FormItem>
+                  )}
+                />
+                {!isTimeless && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField
+                        control={form.control}
+                        name="startTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start</FormLabel>
+                            <FormControl>
+                              <Input type="time" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="endTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>End</FormLabel>
+                            <FormControl>
+                              <Input type="time" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    {liveDuration && <p className="text-xs text-muted-foreground">Duration: {liveDuration}</p>}
+                  </>
+                )}
                 <FormField
                   control={form.control}
                   name="recurrence"

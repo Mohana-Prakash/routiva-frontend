@@ -13,14 +13,20 @@ export function Sidebar() {
 
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
-      <div className="flex h-14 items-center gap-2 border-b px-4">
+      <div className="flex justify-center h-14 items-center gap-2 border-b px-4">
         <div className="overflow-hidden rounded-md">
-          <Image src="/logo-wordmark.png" alt={env.appName} width={130} height={56} />
+          <Image
+            src="/logo-wordmark.png"
+            alt={env.appName}
+            width={130}
+            height={56}
+          />
         </div>
       </div>
       <nav aria-label="Primary" className="flex-1 space-y-1 p-3">
         {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+          const active =
+            pathname === item.href || pathname?.startsWith(`${item.href}/`);
           const Icon = item.icon;
           return (
             <Link

@@ -61,26 +61,43 @@ export function TimelineItem({
     startActivity.isPending ||
     completeActivity.isPending ||
     skipActivity.isPending;
+  // Timeless (no fixed slot) is available all day: "arrived" as soon as the day starts, and
+  // doesn't "end" until the day itself does — matching the backend's day-boundary sweep rule
+  // for timeless logs (tracking.repository.ts findExpiredTimeless*).
+  const isTimeless = !item.startTime || !item.endTime;
   // Start/Complete only become available once the activity's scheduled time has
   // actually arrived — you can't log time for something that hasn't happened yet.
-  // Skip is exempt: you can always skip ahead, planned or not.
   const timeHasArrived =
-    combineDateAndTime(date, item.startTime, timezone).getTime() <= now.getTime();
+    isTimeless || combineDateAndTime(date, item.startTime as string, timezone).getTime() <= now.getTime();
+  // Once the scheduled end time has passed, no action is offered at all — a still-running
+  // activity gets auto-completed by the backend sweep shortly after (actualEnd backfilled to
+  // the planned end), and an unstarted one gets auto-marked Missed the same way, so there's
+  // nothing left for the user to do here.
+  const timeHasEnded = isTimeless
+    ? combineDateAndTime(date, "23:59", timezone).getTime() < now.getTime()
+    : combineDateAndTime(date, item.endTime as string, timezone).getTime() < now.getTime();
   // Planned items can be started, or completed directly for quick one-tap tracking
   // (frontend-requirements 03 §10) — actual timing may legitimately differ from plan.
-  const canStart = logStatus === "PLANNED" && timeHasArrived;
+  const canStart = logStatus === "PLANNED" && timeHasArrived && !timeHasEnded;
   const canComplete =
-    logStatus === "IN_PROGRESS" || (logStatus === "PLANNED" && timeHasArrived);
-  const canSkip = logStatus === "PLANNED" || logStatus === "IN_PROGRESS";
+    !timeHasEnded &&
+    (logStatus === "IN_PROGRESS" || (logStatus === "PLANNED" && timeHasArrived));
+  const canSkip = !timeHasEnded && (logStatus === "PLANNED" || logStatus === "IN_PROGRESS");
 
   return (
     <li className="flex gap-3 py-2">
       <div className="w-14 shrink-0 pt-2 text-right text-xs text-muted-foreground tabular-nums">
-        <div>{item.startTime}</div>
-        <div>{item.endTime}</div>
-        <div className="mt-0.5 text-[10px] text-muted-foreground/70">
-          {formatDurationMinutes(minutesBetween(item.startTime, item.endTime))}
-        </div>
+        {isTimeless ? (
+          <div className="text-muted-foreground/70">Anytime</div>
+        ) : (
+          <>
+            <div>{item.startTime}</div>
+            <div>{item.endTime}</div>
+            <div className="mt-0.5 text-[10px] text-muted-foreground/70">
+              {formatDurationMinutes(minutesBetween(item.startTime as string, item.endTime as string))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* A real <button> can't contain the Start/Complete/Skip buttons below without
@@ -166,7 +183,7 @@ export function TimelineItem({
                 disabled={isPending}
                 onClick={() => handleAction("complete")}
               >
-                Complete
+                {logStatus === "IN_PROGRESS" ? "End" : "Complete"}
               </Button>
             )}
             {canSkip && (

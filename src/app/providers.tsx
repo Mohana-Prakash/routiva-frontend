@@ -7,6 +7,7 @@ import { createQueryClient } from "@/lib/query/queryClient";
 import { AuthProvider } from "@/features/auth/AuthProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { AlarmSoundListener } from "@/components/shared/AlarmSoundListener";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(createQueryClient);
@@ -15,6 +16,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
+          <AlarmSoundListener />
           {children}
           <Toaster richColors closeButton position="top-center" />
         </TooltipProvider>

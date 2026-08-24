@@ -3,7 +3,7 @@ export type AlarmOffsetPreset = 0 | 5 | 10 | 15;
 export interface Activity {
   id: string;
   userId: string;
-  categoryId: string;
+  categoryId: string | null;
   name: string;
   description: string | null;
   defaultDurationMinutes: number | null;
@@ -16,7 +16,7 @@ export interface Activity {
 }
 
 export interface CreateActivityInput {
-  categoryId: string;
+  categoryId?: string | null;
   name: string;
   description?: string | null;
   defaultDurationMinutes?: number | null;
@@ -25,7 +25,7 @@ export interface CreateActivityInput {
 }
 
 export interface UpdateActivityInput {
-  categoryId?: string;
+  categoryId?: string | null;
   name?: string;
   description?: string | null;
   defaultDurationMinutes?: number | null;

@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/shared/ErrorState";
 import { LoadingSkeleton, LoadingSkeletonList } from "@/components/shared/LoadingSkeleton";
 import { ReportSummaryCards } from "@/features/reports/components/ReportSummaryCards";
 import { CategoryBreakdownChart } from "@/features/reports/components/CategoryBreakdownChart";
+import { CategoryPerformanceList } from "@/features/reports/components/CategoryPerformanceList";
 import { ActivityPerformanceList } from "@/features/reports/components/ActivityPerformanceList";
 import { DailyTrendChart } from "@/features/reports/components/DailyTrendChart";
 import { TopActivitiesSection } from "@/features/reports/components/TopActivitiesSection";
@@ -67,7 +68,10 @@ export default function ReportsPage() {
             ) : categories.isError ? (
               <ErrorState error={categories.error} onRetry={() => categories.refetch()} />
             ) : categories.data && categories.data.length > 0 ? (
-              <CategoryBreakdownChart items={categories.data} />
+              <>
+                <CategoryBreakdownChart items={categories.data} />
+                <CategoryPerformanceList items={categories.data} />
+              </>
             ) : (
               <p className="text-sm text-muted-foreground">No category data for this range.</p>
             )}

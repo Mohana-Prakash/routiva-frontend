@@ -111,16 +111,26 @@ export function ActivityDetailSheet({
     startActivity.isPending ||
     completeActivity.isPending ||
     skipActivity.isPending;
-  // Same time gate as the timeline row: Start/Complete only once the scheduled
-  // time has actually arrived. Skip is exempt.
+  // Same time gates as the timeline row: Start/Complete only once the scheduled time has
+  // actually arrived, and nothing at all once the scheduled end time has passed (the backend
+  // sweep resolves the log automatically at that point). Timeless items are available all day.
+  const isTimeless = !item.startTime || !item.endTime;
   const timeHasArrived =
-    combineDateAndTime(item.date, item.startTime, timezone).getTime() <=
-    now.getTime();
-  const canStart = log?.status === "PLANNED" && timeHasArrived;
+    isTimeless ||
+    combineDateAndTime(item.date, item.startTime as string, timezone).getTime() <=
+      now.getTime();
+  const timeHasEnded = isTimeless
+    ? combineDateAndTime(item.date, "23:59", timezone).getTime() < now.getTime()
+    : combineDateAndTime(item.date, item.endTime as string, timezone).getTime() <
+      now.getTime();
+  const canStart = log?.status === "PLANNED" && timeHasArrived && !timeHasEnded;
   const canComplete =
-    log?.status === "IN_PROGRESS" ||
-    (log?.status === "PLANNED" && timeHasArrived);
-  const canSkip = log?.status === "PLANNED" || log?.status === "IN_PROGRESS";
+    !timeHasEnded &&
+    (log?.status === "IN_PROGRESS" ||
+      (log?.status === "PLANNED" && timeHasArrived));
+  const canSkip =
+    !timeHasEnded &&
+    (log?.status === "PLANNED" || log?.status === "IN_PROGRESS");
 
   return (
     <>
@@ -147,11 +157,17 @@ export function ActivityDetailSheet({
               <div>
                 <dt className="text-xs text-muted-foreground mt-1">Planned</dt>
                 <dd>
-                  {item.startTime} – {item.endTime} (
-                  {formatDurationMinutes(
-                    minutesBetween(item.startTime, item.endTime),
+                  {isTimeless ? (
+                    "Anytime today"
+                  ) : (
+                    <>
+                      {item.startTime} – {item.endTime} (
+                      {formatDurationMinutes(
+                        minutesBetween(item.startTime as string, item.endTime as string),
+                      )}
+                      )
+                    </>
                   )}
-                  )
                 </dd>
               </div>
               <div>
@@ -224,7 +240,7 @@ export function ActivityDetailSheet({
                       })
                     }
                   >
-                    Complete
+                    {log.status === "IN_PROGRESS" ? "End" : "Complete"}
                   </Button>
                 )}
                 {canSkip && log && (
@@ -253,7 +269,7 @@ export function ActivityDetailSheet({
                 />
               )}
 
-            <AdjustTimeSection key={item.id} item={item} />
+            {!isTimeless && <AdjustTimeSection key={item.id} item={item} />}
           </div>
 
           <SheetFooter>

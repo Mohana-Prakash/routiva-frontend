@@ -20,8 +20,10 @@ export interface ScheduleEntry {
   id: string;
   userId: string;
   activityId: string;
-  startTime: string; // "HH:mm"
-  endTime: string; // "HH:mm"
+  startTime: string | null; // "HH:mm"; null (with endTime) means timeless — no fixed slot
+  endTime: string | null; // "HH:mm"; null (with startTime) means timeless
+  /** "HH:mm" — timeless-only: the absolute time of day to send the reminder at. */
+  timelessReminderTime: string | null;
   recurrence: Recurrence;
   isActive: boolean;
   createdAt: string;
@@ -30,8 +32,9 @@ export interface ScheduleEntry {
 
 export interface CreateScheduleEntryInput {
   activityId: string;
-  startTime: string;
-  endTime: string;
+  startTime: string | null;
+  endTime: string | null;
+  timelessReminderTime?: string | null;
   recurrence: Recurrence;
 }
 
@@ -39,8 +42,12 @@ export type ScheduleUpdateScope = "THIS_OCCURRENCE" | "THIS_AND_FUTURE" | "ENTIR
 
 export interface UpdateScheduleEntryInput {
   activityId?: string;
+  // Omitted = unchanged (independently, for either field). To switch to timeless, set
+  // `timeless: true` instead — it wins over whatever startTime/endTime are also sent.
   startTime?: string;
   endTime?: string;
+  timeless?: boolean;
+  timelessReminderTime?: string | null;
   recurrence?: Recurrence;
   isActive?: boolean;
   /** Required by backend-requirements 04 §11 whenever a recurring entry changes. */
@@ -60,6 +67,7 @@ export interface ScheduleException {
   date: string; // "YYYY-MM-DD"
   startTime: string | null;
   endTime: string | null;
+  timelessReminderTime: string | null;
   action: ScheduleExceptionAction;
   reason: string | null;
   createdAt: string;
@@ -72,6 +80,7 @@ export interface CreateScheduleExceptionInput {
   date: string;
   startTime?: string | null;
   endTime?: string | null;
+  timelessReminderTime?: string | null;
   action: ScheduleExceptionAction;
   reason?: string | null;
 }
@@ -79,6 +88,7 @@ export interface CreateScheduleExceptionInput {
 export interface UpdateScheduleExceptionInput {
   startTime?: string | null;
   endTime?: string | null;
+  timelessReminderTime?: string | null;
   reason?: string | null;
 }
 
@@ -100,13 +110,15 @@ export interface ScheduleDayItem {
   categoryName: string;
   categoryColor: string;
   categoryIcon: string | null;
-  startTime: string;
-  endTime: string;
+  startTime: string | null;
+  endTime: string | null;
   source: ScheduleItemSource;
   scheduleEntryId: string | null;
   exceptionId: string | null;
   alarmEnabled: boolean;
   alarmOffsetMinutes: number | null;
+  /** Timeless items only: the resolved instant timelessReminderTime falls on for this date. */
+  reminderAt: string | null;
   notes: string | null;
   activityLog: ActivityLog | null;
   hasConflict: boolean;

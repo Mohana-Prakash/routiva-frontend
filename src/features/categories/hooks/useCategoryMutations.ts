@@ -15,14 +15,11 @@ export function useUpdateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateCategoryInput }) => categoriesApi.update(id, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.categories() }),
-  });
-}
-
-export function useDeleteCategory() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => categoriesApi.remove(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.categories() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories() });
+      // Deactivating a category cascades to deactivate its activities server-side
+      // (categories.service.ts), so the activities list can go stale here too.
+      queryClient.invalidateQueries({ queryKey: queryKeys.activities() });
+    },
   });
 }

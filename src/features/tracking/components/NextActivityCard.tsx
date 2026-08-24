@@ -15,7 +15,8 @@ interface NextActivityCardProps {
 
 export function NextActivityCard({ item, nowTime }: NextActivityCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
-  const startsIn = minutesUntil(item.startTime, nowTime);
+  // The dashboard only ever selects a timed item for "Next" (see dashboard/page.tsx).
+  const startsIn = minutesUntil(item.startTime as string, nowTime);
 
   return (
     <>
@@ -31,7 +32,8 @@ export function NextActivityCard({ item, nowTime }: NextActivityCardProps) {
               {item.alarmEnabled && <BellRing className="h-3.5 w-3.5" aria-label="Alarm enabled" />}
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              {item.startTime} – {item.endTime} ({formatDurationMinutes(minutesBetween(item.startTime, item.endTime))}) · starts in{" "}
+              {item.startTime} – {item.endTime} (
+              {formatDurationMinutes(minutesBetween(item.startTime as string, item.endTime as string))}) · starts in{" "}
               {formatDurationMinutes(startsIn)}
             </p>
           </button>

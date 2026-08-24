@@ -55,12 +55,12 @@ export function DailyTimeline({ items, isLoading, isError, error, onRetry, nowTi
     );
   }
 
-  const sorted = [...items].sort((a, b) => a.startTime.localeCompare(b.startTime));
-
+  // The backend already returns items chronologically sorted (timed occurrences first, then
+  // timeless ones) — see schedule-renderer.ts — so no client-side re-sort is needed.
   return (
     <>
       <ul className="space-y-1">
-        {sorted.map((item) => (
+        {items.map((item) => (
           <TimelineItem
             key={item.id}
             item={item}

@@ -21,7 +21,8 @@ export function CurrentActivityCard({ item, nowTime }: CurrentActivityCardProps)
   const [detailOpen, setDetailOpen] = useState(false);
   const completeActivity = useCompleteActivity();
   const skipActivity = useSkipActivity();
-  const remaining = minutesUntil(item.endTime, nowTime);
+  const isTimeless = !item.startTime || !item.endTime;
+  const remaining = isTimeless ? null : minutesUntil(item.endTime as string, nowTime);
 
   return (
     <>
@@ -34,12 +35,17 @@ export function CurrentActivityCard({ item, nowTime }: CurrentActivityCardProps)
             <p className="text-lg font-semibold">{item.activityName}</p>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <CategoryBadge name={item.categoryName} color={item.categoryColor} icon={item.categoryIcon} />
-              <span>
-                {item.startTime} – {item.endTime} ({formatDurationMinutes(minutesBetween(item.startTime, item.endTime))})
-              </span>
+              {!isTimeless && (
+                <span>
+                  {item.startTime} – {item.endTime} (
+                  {formatDurationMinutes(minutesBetween(item.startTime as string, item.endTime as string))})
+                </span>
+              )}
               {item.alarmEnabled && <BellRing className="h-3.5 w-3.5" aria-label="Alarm enabled" />}
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">{formatDurationMinutes(remaining)} remaining</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {isTimeless ? "Anytime today" : `${formatDurationMinutes(remaining as number)} remaining`}
+            </p>
           </button>
           {item.activityLog && (
             <div className="flex gap-2">
@@ -48,7 +54,7 @@ export function CurrentActivityCard({ item, nowTime }: CurrentActivityCardProps)
                 disabled={completeActivity.isPending}
                 onClick={() => completeActivity.mutate(item.activityLog!.id, { onError: (e) => toast.error(getFriendlyErrorMessage(e)) })}
               >
-                Complete
+                End
               </Button>
               <Button
                 size="sm"

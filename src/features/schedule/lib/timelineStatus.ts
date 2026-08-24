@@ -24,6 +24,8 @@ export function getTimelineDisplayStatus(item: ScheduleDayItem, nowTime: string)
     case "IN_PROGRESS":
       return "CURRENT";
     default:
+      // Timeless (no fixed slot) is always available today — never "Upcoming".
+      if (!item.startTime || !item.endTime) return "CURRENT";
       // PLANNED or no log yet — derive upcoming/current from wall-clock time.
       return isTimeNowWithinRange(item.startTime, item.endTime, nowTime) ? "CURRENT" : "UPCOMING";
   }
