@@ -12,6 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://routiva.netlify.app"),
   title: "Routiva",
   description:
     "Personal schedule and activity tracker — plan your day, track what actually happened, and see your progress.",
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "My Day",
+    title: "Routiva",
   },
 };
 

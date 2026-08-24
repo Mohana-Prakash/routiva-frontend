@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { CalendarCheck } from "lucide-react";
 import { NAV_ITEMS } from "./nav-items";
 import { cn } from "@/lib/utils";
 import { env } from "@/lib/env";
@@ -14,8 +14,9 @@ export function Sidebar() {
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
       <div className="flex h-14 items-center gap-2 border-b px-4">
-        <CalendarCheck className="h-5 w-5 text-primary" aria-hidden="true" />
-        <span className="font-heading text-sm font-semibold">{env.appName}</span>
+        <div className="overflow-hidden rounded-md">
+          <Image src="/logo-wordmark.png" alt={env.appName} width={130} height={56} />
+        </div>
       </div>
       <nav aria-label="Primary" className="flex-1 space-y-1 p-3">
         {NAV_ITEMS.map((item) => {

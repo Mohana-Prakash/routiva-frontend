@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="My Day Tracker">
-  <rect width="512" height="512" rx="112" fill="#4F46E5"/>
-  <circle cx="256" cy="272" r="128" fill="none" stroke="#EEF2FF" stroke-width="24"/>
-  <path d="M256 200v72l52 44" fill="none" stroke="#EEF2FF" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="196" y="96" width="24" height="48" rx="12" fill="#EEF2FF"/>
-  <rect x="292" y="96" width="24" height="48" rx="12" fill="#EEF2FF"/>
-</svg>
