@@ -78,15 +78,13 @@ export function TimelineItem({
     logStatus === "IN_PROGRESS" ||
     logStatus === "MISSED" ||
     (logStatus === "PLANNED" && timeHasArrived);
-  // Skip DOES have an upper bound, unlike Complete: once you've actually started something,
+  // Skip has an upper bound Complete doesn't: once you've actually started something,
   // skipping it after its window closed is meaningless — you engaged with it, so the only
   // honest options left are Complete (say how long you actually spent) or leaving it as is.
-  // MISSED is the one exception: it was never started, so acknowledging it as skipped even
-  // after the window closed is still meaningful.
+  // MISSED is excluded entirely: it's already the system's own "not done" label, so Skip
+  // wouldn't add anything — Complete (if it happened elsewhere) is the only useful action left.
   const canSkip =
-    (logStatus === "PLANNED" && !timeHasEnded) ||
-    (logStatus === "IN_PROGRESS" && !timeHasEnded) ||
-    logStatus === "MISSED";
+    (logStatus === "PLANNED" && !timeHasEnded) || (logStatus === "IN_PROGRESS" && !timeHasEnded);
 
   return (
     <>

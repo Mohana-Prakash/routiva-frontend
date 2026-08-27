@@ -128,12 +128,10 @@ export function ActivityDetailSheet({
     (log?.status === "PLANNED" && timeHasArrived);
   // Skip has an upper bound Complete doesn't: once actually started, skipping after the window
   // closed is meaningless — the only honest options left are Complete or leaving it as is.
-  // MISSED (never started) is the exception, since acknowledging it as skipped is still
-  // meaningful even after the window closed.
+  // MISSED is excluded entirely: it's already the system's own "not done" label, so Skip
+  // wouldn't add anything — Complete (if it happened elsewhere) is the only useful action left.
   const canSkip =
-    (log?.status === "PLANNED" && !timeHasEnded) ||
-    (log?.status === "IN_PROGRESS" && !timeHasEnded) ||
-    log?.status === "MISSED";
+    (log?.status === "PLANNED" && !timeHasEnded) || (log?.status === "IN_PROGRESS" && !timeHasEnded);
   // Once tracking has moved past PLANNED (started, completed, or skipped), the planned time is
   // historical — editing it would retroactively contradict data already recorded against it.
   const canAdjustTime = !log || log.status === "PLANNED";

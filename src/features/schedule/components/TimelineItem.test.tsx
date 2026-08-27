@@ -187,7 +187,7 @@ describe("TimelineItem", () => {
     expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument();
   });
 
-  it("still offers Complete and Skip (but not Start) once the backend has marked it Missed", () => {
+  it("offers only Complete (not Start or Skip) once the backend has marked it Missed", () => {
     const missedItem: ScheduleDayItem = {
       ...plannedItem,
       startTime: ENDED_START,
@@ -200,6 +200,6 @@ describe("TimelineItem", () => {
 
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Complete" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Skip" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument();
   });
 });
