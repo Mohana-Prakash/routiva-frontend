@@ -34,6 +34,13 @@ export interface CorrectActualTimingInput {
   notes?: string | null;
 }
 
+/** Optional actuals for the "how long did you actually spend on this" completion prompt —
+ * omitted entirely for a simple one-tap complete (e.g. a headless notification-button tap). */
+export interface CompleteActivityInput {
+  actualStart?: string;
+  actualEnd?: string;
+}
+
 export interface ActivityLogFilters {
   from: string;
   to: string;
@@ -45,7 +52,10 @@ export interface DailySummary {
   completedCount: number;
   skippedCount: number;
   missedCount: number;
+  /** Not yet started (PLANNED, no log yet) — distinct from currentCount below. */
   upcomingCount: number;
+  /** Actually in progress right now (IN_PROGRESS) — was previously folded into upcomingCount. */
+  currentCount: number;
   adjustedCount: number;
   plannedDurationMinutes: number;
   actualDurationMinutes: number;

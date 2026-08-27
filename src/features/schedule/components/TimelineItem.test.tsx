@@ -88,8 +88,16 @@ describe("TimelineItem", () => {
 
     expect(screen.getByText("Meditation")).toBeInTheDocument();
 
+    // Complete opens a "how long did you actually spend on this" prompt rather than
+    // completing immediately — confirming it with the default (full planned duration) is
+    // what calls the API.
     await user.click(screen.getByRole("button", { name: "Complete" }));
-    await waitFor(() => expect(trackingApi.complete).toHaveBeenCalledWith("log-1"));
+    await user.click(await screen.findByRole("button", { name: "Mark Complete" }));
+    await waitFor(() => expect(trackingApi.complete).toHaveBeenCalled());
+    const [completedLogId, completeInput] = vi.mocked(trackingApi.complete).mock.calls[0]!;
+    expect(completedLogId).toBe("log-1");
+    expect(completeInput?.actualStart).toBeTruthy();
+    expect(completeInput?.actualEnd).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Skip" }));
     await waitFor(() => expect(trackingApi.skip).toHaveBeenCalledWith("log-1"));
@@ -153,14 +161,45 @@ describe("TimelineItem", () => {
     expect(screen.getByRole("button", { name: "Skip" })).toBeInTheDocument();
   });
 
-  it("hides every action, including Skip, once the scheduled end time has passed", () => {
+  it("keeps Start/Complete available once the scheduled end time has passed, but drops Skip for a still-PLANNED (never started) activity", () => {
     const overdueItem: ScheduleDayItem = { ...plannedItem, startTime: ENDED_START, endTime: ENDED_END };
     renderWithQueryClient(
       <TimelineItem item={overdueItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
     );
 
-    expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Complete" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument();
+  });
+
+  it("drops Skip (but keeps End) once an in-progress activity's window has closed — skipping something you already started is meaningless", () => {
+    const overdueInProgress: ScheduleDayItem = {
+      ...plannedItem,
+      startTime: ENDED_START,
+      endTime: ENDED_END,
+      activityLog: { ...plannedItem.activityLog!, status: "IN_PROGRESS", actualStart: new Date().toISOString() },
+    };
+    renderWithQueryClient(
+      <TimelineItem item={overdueInProgress} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
+    );
+
+    expect(screen.getByRole("button", { name: "End" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument();
+  });
+
+  it("still offers Complete and Skip (but not Start) once the backend has marked it Missed", () => {
+    const missedItem: ScheduleDayItem = {
+      ...plannedItem,
+      startTime: ENDED_START,
+      endTime: ENDED_END,
+      activityLog: { ...plannedItem.activityLog!, status: "MISSED" },
+    };
+    renderWithQueryClient(
+      <TimelineItem item={missedItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Complete" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Skip" })).toBeInTheDocument();
   });
 });

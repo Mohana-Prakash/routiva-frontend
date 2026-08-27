@@ -6,8 +6,9 @@ import { minutesBetween } from "@/lib/datetime/time";
  * Derives the daily completion summary (frontend-requirements 02 §11) from the
  * already-fetched day-schedule response instead of a dedicated endpoint — see
  * the comment in lib/api/tracking.ts for why. Every count here reflects the
- * ActivityLog status the backend returned; only "upcoming" is inferred (no log
- * yet / still PLANNED), which is presentational, not a business calculation.
+ * ActivityLog status the backend returned; only "upcoming"/"current" are
+ * inferred (no log yet / still PLANNED vs. actually IN_PROGRESS right now),
+ * which is presentational, not a business calculation.
  */
 export function computeDailySummary(date: string, items: ScheduleDayItem[]): DailySummary {
   let completedCount = 0;
@@ -15,6 +16,7 @@ export function computeDailySummary(date: string, items: ScheduleDayItem[]): Dai
   let missedCount = 0;
   let adjustedCount = 0;
   let upcomingCount = 0;
+  let currentCount = 0;
   let plannedDurationMinutes = 0;
   let actualDurationMinutes = 0;
 
@@ -41,6 +43,9 @@ export function computeDailySummary(date: string, items: ScheduleDayItem[]): Dai
         break;
       case "CANCELLED":
         break;
+      case "IN_PROGRESS":
+        currentCount++;
+        break;
       default:
         upcomingCount++;
     }
@@ -62,6 +67,7 @@ export function computeDailySummary(date: string, items: ScheduleDayItem[]): Dai
     skippedCount,
     missedCount,
     upcomingCount,
+    currentCount,
     adjustedCount,
     plannedDurationMinutes,
     actualDurationMinutes: Math.round(actualDurationMinutes),

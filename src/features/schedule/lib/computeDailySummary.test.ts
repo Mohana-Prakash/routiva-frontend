@@ -56,6 +56,7 @@ describe("computeDailySummary", () => {
       makeItem({ id: "3", activityLog: { status: "MISSED" } }),
       makeItem({ id: "4", activityLog: { status: "ADJUSTED", actualStart: "2026-08-21T19:00:00Z", actualEnd: "2026-08-21T19:20:00Z" } }),
       makeItem({ id: "5", activityLog: null }),
+      makeItem({ id: "6", activityLog: { status: "IN_PROGRESS" } }),
     ];
 
     const summary = computeDailySummary("2026-08-21", items);
@@ -64,8 +65,11 @@ describe("computeDailySummary", () => {
     expect(summary.skippedCount).toBe(1);
     expect(summary.missedCount).toBe(1);
     expect(summary.adjustedCount).toBe(1);
+    // Only the not-yet-started (no log yet) item — an IN_PROGRESS one is "current", not
+    // "upcoming", even though it hasn't been resolved yet either.
     expect(summary.upcomingCount).toBe(1);
-    expect(summary.plannedDurationMinutes).toBe(150); // 5 items * 30 min
+    expect(summary.currentCount).toBe(1);
+    expect(summary.plannedDurationMinutes).toBe(180); // 6 items * 30 min
     expect(summary.actualDurationMinutes).toBe(50); // 30 + 20
   });
 

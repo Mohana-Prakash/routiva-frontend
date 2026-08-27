@@ -9,7 +9,8 @@ import { CategoryBadge } from "@/components/shared/CategoryBadge";
 import { ActivityDetailSheet } from "@/features/schedule/components/ActivityDetailSheet";
 import { formatDurationMinutes, minutesBetween, minutesUntil } from "@/lib/datetime/time";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
-import { useCompleteActivity, useSkipActivity } from "../hooks/useTrackingMutations";
+import { useSkipActivity } from "../hooks/useTrackingMutations";
+import { CompleteActivityDialog } from "./CompleteActivityDialog";
 import type { ScheduleDayItem } from "@/types/schedule";
 
 interface CurrentActivityCardProps {
@@ -19,10 +20,14 @@ interface CurrentActivityCardProps {
 
 export function CurrentActivityCard({ item, nowTime }: CurrentActivityCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
-  const completeActivity = useCompleteActivity();
+  const [completingItem, setCompletingItem] = useState<ScheduleDayItem | null>(null);
   const skipActivity = useSkipActivity();
   const isTimeless = !item.startTime || !item.endTime;
   const remaining = isTimeless ? null : minutesUntil(item.endTime as string, nowTime);
+  // This card only ever shows an IN_PROGRESS activity (see dashboard/page.tsx) — once you've
+  // actually started it, skipping after its window closed is meaningless, since the only
+  // honest options left are Complete (say how long you actually spent) or leaving it as is.
+  const timeHasEnded = !isTimeless && nowTime >= (item.endTime as string);
 
   return (
     <>
@@ -49,27 +54,30 @@ export function CurrentActivityCard({ item, nowTime }: CurrentActivityCardProps)
           </button>
           {item.activityLog && (
             <div className="flex gap-2">
-              <Button
-                size="sm"
-                disabled={completeActivity.isPending}
-                onClick={() => completeActivity.mutate(item.activityLog!.id, { onError: (e) => toast.error(getFriendlyErrorMessage(e)) })}
-              >
+              <Button size="sm" onClick={() => setCompletingItem(item)}>
                 End
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={skipActivity.isPending}
-                onClick={() => skipActivity.mutate(item.activityLog!.id, { onError: (e) => toast.error(getFriendlyErrorMessage(e)) })}
-              >
-                {isTimeless ? "Close" : "Skip"}
-              </Button>
+              {!timeHasEnded && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={skipActivity.isPending}
+                  onClick={() => skipActivity.mutate(item.activityLog!.id, { onError: (e) => toast.error(getFriendlyErrorMessage(e)) })}
+                >
+                  {isTimeless ? "Close" : "Skip"}
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
       <ActivityDetailSheet item={detailOpen ? item : null} nowTime={nowTime} onOpenChange={setDetailOpen} />
+
+      <CompleteActivityDialog
+        item={completingItem}
+        onOpenChange={(open) => !open && setCompletingItem(null)}
+      />
     </>
   );
 }

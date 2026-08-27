@@ -5,6 +5,7 @@ import type { DailySummary } from "@/types/activity-log";
 export function DailySummaryCard({ summary }: { summary: DailySummary }) {
   const stats = [
     { label: "Completed", value: summary.completedCount },
+    { label: "Current", value: summary.currentCount },
     { label: "Upcoming", value: summary.upcomingCount },
     { label: "Skipped", value: summary.skippedCount },
     { label: "Adjusted", value: summary.adjustedCount },
@@ -18,7 +19,7 @@ export function DailySummaryCard({ summary }: { summary: DailySummary }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid grid-cols-4 gap-2 text-center">
+        <div className="grid grid-cols-5 gap-2 text-center">
           {stats.map((stat) => (
             <div key={stat.label}>
               <p className="text-lg font-semibold">{stat.value}</p>

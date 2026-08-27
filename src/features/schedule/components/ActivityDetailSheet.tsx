@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,10 +28,10 @@ import {
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { useAuth } from "@/features/auth/AuthProvider";
 import {
-  useCompleteActivity,
   useSkipActivity,
   useStartActivity,
 } from "@/features/tracking/hooks/useTrackingMutations";
+import { CompleteActivityDialog } from "@/features/tracking/components/CompleteActivityDialog";
 import {
   useCreateScheduleException,
   useDeleteScheduleException,
@@ -63,11 +64,11 @@ export function ActivityDetailSheet({
   const removeConfirm = useConfirmDialog();
 
   const startActivity = useStartActivity();
-  const completeActivity = useCompleteActivity();
   const skipActivity = useSkipActivity();
   const createException = useCreateScheduleException();
   const deleteException = useDeleteScheduleException();
   const now = useNow();
+  const [completingItem, setCompletingItem] = useState<ScheduleDayItem | null>(null);
 
   if (!item) return null;
 
@@ -107,30 +108,32 @@ export function ActivityDetailSheet({
     );
   }
 
-  const isTrackingPending =
-    startActivity.isPending ||
-    completeActivity.isPending ||
-    skipActivity.isPending;
-  // Same time gates as the timeline row: Start/Complete only once the scheduled time has
-  // actually arrived, and nothing at all once the scheduled end time has passed (the backend
-  // sweep resolves the log automatically at that point). Timeless items are available all day.
+  const isTrackingPending = startActivity.isPending || skipActivity.isPending;
+  // Same gates as the timeline row: Start/Complete only once the scheduled time has actually
+  // arrived, and Complete has no upper bound — the system never assumes an outcome just
+  // because the planned window passed (including on a MISSED log, which just means the window
+  // passed without being acted on, not a final verdict). Timeless items are available all day.
   const isTimeless = !item.startTime || !item.endTime;
   const timeHasArrived =
     isTimeless ||
     combineDateAndTime(item.date, item.startTime as string, timezone).getTime() <=
       now.getTime();
-  const timeHasEnded = isTimeless
-    ? combineDateAndTime(item.date, "23:59", timezone).getTime() < now.getTime()
-    : combineDateAndTime(item.date, item.endTime as string, timezone).getTime() <
-      now.getTime();
-  const canStart = log?.status === "PLANNED" && timeHasArrived && !timeHasEnded;
+  const timeHasEnded =
+    !isTimeless &&
+    combineDateAndTime(item.date, item.endTime as string, timezone).getTime() < now.getTime();
+  const canStart = log?.status === "PLANNED" && timeHasArrived;
   const canComplete =
-    !timeHasEnded &&
-    (log?.status === "IN_PROGRESS" ||
-      (log?.status === "PLANNED" && timeHasArrived));
+    log?.status === "IN_PROGRESS" ||
+    log?.status === "MISSED" ||
+    (log?.status === "PLANNED" && timeHasArrived);
+  // Skip has an upper bound Complete doesn't: once actually started, skipping after the window
+  // closed is meaningless — the only honest options left are Complete or leaving it as is.
+  // MISSED (never started) is the exception, since acknowledging it as skipped is still
+  // meaningful even after the window closed.
   const canSkip =
-    !timeHasEnded &&
-    (log?.status === "PLANNED" || log?.status === "IN_PROGRESS");
+    (log?.status === "PLANNED" && !timeHasEnded) ||
+    (log?.status === "IN_PROGRESS" && !timeHasEnded) ||
+    log?.status === "MISSED";
   // Once tracking has moved past PLANNED (started, completed, or skipped), the planned time is
   // historical — editing it would retroactively contradict data already recorded against it.
   const canAdjustTime = !log || log.status === "PLANNED";
@@ -234,15 +237,7 @@ export function ActivityDetailSheet({
                   </Button>
                 )}
                 {canComplete && log && (
-                  <Button
-                    size="sm"
-                    disabled={isTrackingPending}
-                    onClick={() =>
-                      completeActivity.mutate(log.id, {
-                        onError: (e) => toast.error(getFriendlyErrorMessage(e)),
-                      })
-                    }
-                  >
+                  <Button size="sm" onClick={() => setCompletingItem(item)}>
                     {log.status === "IN_PROGRESS" ? "End" : "Complete"}
                   </Button>
                 )}
@@ -299,6 +294,11 @@ export function ActivityDetailSheet({
         destructive
         isConfirming={deleteException.isPending || createException.isPending}
         onConfirm={handleRemoveForToday}
+      />
+
+      <CompleteActivityDialog
+        item={completingItem}
+        onOpenChange={(open) => !open && setCompletingItem(null)}
       />
     </>
   );

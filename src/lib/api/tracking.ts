@@ -1,5 +1,10 @@
 import { httpClient } from "./client";
-import type { ActivityLog, ActivityLogFilters, CorrectActualTimingInput } from "@/types/activity-log";
+import type {
+  ActivityLog,
+  ActivityLogFilters,
+  CompleteActivityInput,
+  CorrectActualTimingInput,
+} from "@/types/activity-log";
 import type { PaginatedResponse, PaginationParams } from "@/types/api";
 
 /**
@@ -18,7 +23,8 @@ export const trackingApi = {
 
   start: (id: string) => httpClient.post<ActivityLog>(`/activity-logs/${id}/start`).then((r) => r.data),
 
-  complete: (id: string) => httpClient.post<ActivityLog>(`/activity-logs/${id}/complete`).then((r) => r.data),
+  complete: (id: string, input?: CompleteActivityInput) =>
+    httpClient.post<ActivityLog>(`/activity-logs/${id}/complete`, input).then((r) => r.data),
 
   skip: (id: string) => httpClient.post<ActivityLog>(`/activity-logs/${id}/skip`).then((r) => r.data),
 

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { HelpCircle } from "lucide-react";
 import { NAV_ITEMS } from "./nav-items";
 import { UserMenu } from "./UserMenu";
+import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { env } from "@/lib/env";
 
@@ -46,6 +47,7 @@ export function Topbar() {
         >
           <HelpCircle className="h-5 w-5" aria-hidden="true" />
         </Button>
+        <ThemeToggle />
         <UserMenu />
       </div>
     </header>
