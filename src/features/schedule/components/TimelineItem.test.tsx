@@ -50,6 +50,7 @@ const plannedItem: ScheduleDayItem = {
   exceptionId: null,
   alarmEnabled: false,
   alarmOffsetMinutes: null,
+  reminderAt: null,
   notes: null,
   hasConflict: false,
   conflictsWithIds: [],

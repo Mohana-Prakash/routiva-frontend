@@ -77,6 +77,7 @@ export function ScheduleEntryFormDialog({
       timeless: false,
       startTime: "",
       endTime: "",
+      timelessReminderTime: "",
       recurrence: { type: "DAILY" },
     },
   });
@@ -88,6 +89,7 @@ export function ScheduleEntryFormDialog({
         timeless: !!entry && !entry.startTime,
         startTime: entry?.startTime ?? "",
         endTime: entry?.endTime ?? "",
+        timelessReminderTime: entry?.timelessReminderTime ?? "",
         recurrence: entry?.recurrence ?? { type: "DAILY" },
       });
     }
@@ -135,6 +137,9 @@ export function ScheduleEntryFormDialog({
             startTime: values.timeless ? undefined : values.startTime,
             endTime: values.timeless ? undefined : values.endTime,
             timeless: values.timeless,
+            timelessReminderTime: values.timeless
+              ? values.timelessReminderTime || null
+              : undefined,
             recurrence: values.recurrence,
             scope,
             resolution,
@@ -145,11 +150,15 @@ export function ScheduleEntryFormDialog({
     } else {
       const startTime = values.timeless ? null : values.startTime ?? null;
       const endTime = values.timeless ? null : values.endTime ?? null;
+      const timelessReminderTime = values.timeless
+        ? values.timelessReminderTime || null
+        : null;
       createEntry.mutate(
         {
           activityId: values.activityId,
           startTime,
           endTime,
+          timelessReminderTime,
           recurrence: values.recurrence,
           resolution,
         },
@@ -265,6 +274,25 @@ export function ScheduleEntryFormDialog({
                     </div>
                     {liveDuration && <p className="text-xs text-muted-foreground">Duration: {liveDuration}</p>}
                   </>
+                )}
+                {isTimeless && (
+                  <FormField
+                    control={form.control}
+                    name="timelessReminderTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Remind me at (optional)</FormLabel>
+                        <FormControl>
+                          <Input type="time" {...field} />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          Since this activity has no fixed time, pick a time of day to get
+                          reminded — leave blank for no reminder.
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
                 <FormField
                   control={form.control}

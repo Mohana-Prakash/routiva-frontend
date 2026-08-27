@@ -40,6 +40,7 @@ function makeItem(startTime: string, endTime: string, status: ActivityLogStatus 
     exceptionId: null,
     alarmEnabled: false,
     alarmOffsetMinutes: null,
+    reminderAt: null,
     notes: null,
     hasConflict: false,
     conflictsWithIds: [],

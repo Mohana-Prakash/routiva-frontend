@@ -81,6 +81,7 @@ export function AdHocActivityDialog({
       timeless: false,
       startTime: "",
       endTime: "",
+      timelessReminderTime: "",
       reason: "",
     },
   });
@@ -94,6 +95,7 @@ export function AdHocActivityDialog({
         timeless: false,
         startTime: now,
         endTime: now,
+        timelessReminderTime: "",
         reason: "",
       });
     }
@@ -118,6 +120,9 @@ export function AdHocActivityDialog({
         date: values.date,
         startTime: values.timeless ? null : values.startTime ?? null,
         endTime: values.timeless ? null : values.endTime ?? null,
+        timelessReminderTime: values.timeless
+          ? values.timelessReminderTime || null
+          : null,
         action: "ADD",
         reason: values.reason || null,
         resolution,
@@ -266,6 +271,25 @@ export function AdHocActivityDialog({
                     </div>
                     {liveDuration && <p className="text-xs text-muted-foreground">Duration: {liveDuration}</p>}
                   </>
+                )}
+                {isTimeless && (
+                  <FormField
+                    control={form.control}
+                    name="timelessReminderTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Remind me at (optional)</FormLabel>
+                        <FormControl>
+                          <Input type="time" {...field} />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          Since this activity has no fixed time, pick a time of day to get
+                          reminded — leave blank for no reminder.
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
                 <FormField
                   control={form.control}

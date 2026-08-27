@@ -254,7 +254,7 @@ export function ActivityDetailSheet({
                       })
                     }
                   >
-                    Skip
+                    {isTimeless ? "Close" : "Skip"}
                   </Button>
                 )}
               </div>

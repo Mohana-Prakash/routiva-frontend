@@ -39,6 +39,7 @@ function makeItem(overrides: Omit<Partial<ScheduleDayItem>, "activityLog"> & { a
     exceptionId: null,
     alarmEnabled: false,
     alarmOffsetMinutes: null,
+    reminderAt: null,
     notes: null,
     hasConflict: false,
     conflictsWithIds: [],

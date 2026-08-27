@@ -62,7 +62,7 @@ export function CurrentActivityCard({ item, nowTime }: CurrentActivityCardProps)
                 disabled={skipActivity.isPending}
                 onClick={() => skipActivity.mutate(item.activityLog!.id, { onError: (e) => toast.error(getFriendlyErrorMessage(e)) })}
               >
-                Skip
+                {isTimeless ? "Close" : "Skip"}
               </Button>
             </div>
           )}

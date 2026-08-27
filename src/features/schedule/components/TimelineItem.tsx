@@ -193,7 +193,7 @@ export function TimelineItem({
                 disabled={isPending}
                 onClick={() => handleAction("skip")}
               >
-                Skip
+                {isTimeless ? "Close" : "Skip"}
               </Button>
             )}
           </div>
