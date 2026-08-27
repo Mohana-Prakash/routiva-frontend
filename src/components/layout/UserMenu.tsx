@@ -51,7 +51,9 @@ export function UserMenu() {
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Account menu for ${user.name}`}>
           <Avatar className="h-8 w-8">
-            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+            <AvatarFallback className="bg-primary/15 font-medium text-primary">
+              {getInitials(user.name)}
+            </AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">

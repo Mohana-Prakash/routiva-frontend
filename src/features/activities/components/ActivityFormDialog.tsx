@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +31,7 @@ interface ActivityFormDialogProps {
 
 export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFormDialogProps) {
   const isEditing = !!activity;
+  const router = useRouter();
   const { data: categories, isLoading: categoriesLoading } = useActiveCategories();
   const createActivity = useCreateActivity();
   const updateActivity = useUpdateActivity();
@@ -40,7 +43,6 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFor
       categoryId: NO_CATEGORY,
       name: "",
       description: "",
-      defaultDurationMinutes: 30,
       alarmEnabled: false,
       alarmOffsetMinutes: undefined,
     },
@@ -52,7 +54,6 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFor
         categoryId: activity?.categoryId ?? NO_CATEGORY,
         name: activity?.name ?? "",
         description: activity?.description ?? "",
-        defaultDurationMinutes: activity?.defaultDurationMinutes ?? 30,
         alarmEnabled: activity?.alarmEnabled ?? false,
         alarmOffsetMinutes: activity?.alarmOffsetMinutes ?? undefined,
       });
@@ -61,6 +62,12 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFor
   }, [open, activity]);
 
   const alarmEnabled = form.watch("alarmEnabled");
+
+  function goToSchedule() {
+    if (!activity) return;
+    onOpenChange(false);
+    router.push(`/schedule?tab=base&activityId=${activity.id}`);
+  }
 
   function onSubmit(values: ActivityFormValues) {
     // On edit, an explicit `null` clears an existing category; omitting the field entirely
@@ -71,7 +78,6 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFor
       categoryId,
       name: values.name,
       description: values.description || null,
-      defaultDurationMinutes: values.defaultDurationMinutes ?? null,
       alarmEnabled: values.alarmEnabled,
       alarmOffsetMinutes: values.alarmEnabled ? values.alarmOffsetMinutes ?? null : undefined,
     };
@@ -95,6 +101,19 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFor
           <DialogTitle>{isEditing ? "Edit Activity" : "New Activity"}</DialogTitle>
           <DialogDescription>Activities are reusable — you&apos;ll assign them to time slots on the Schedule screen.</DialogDescription>
         </DialogHeader>
+
+        {isEditing && (
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="h-auto self-start p-0 text-xs"
+            onClick={goToSchedule}
+          >
+            <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
+            Manage schedule for this activity
+          </Button>
+        )}
 
         {categoriesLoading ? (
           <LoadingSkeleton className="h-48 w-full" />
@@ -141,25 +160,6 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: ActivityFor
                           ))}
                         </SelectContent>
                       </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="defaultDurationMinutes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Default duration (minutes)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={24 * 60}
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
-                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

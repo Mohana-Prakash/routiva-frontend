@@ -16,7 +16,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { formatDateLabel, formatDurationMinutes, isValidTimeString, minutesBetween } from "@/lib/datetime/time";
+import {
+  formatDateLabel,
+  formatDurationMinutes,
+  isValidTimeString,
+  minutesBetween,
+  nowTimeInTimeZone,
+  todayInTimeZone,
+} from "@/lib/datetime/time";
 import {
   moveExceptionSchema,
   type MoveExceptionFormValues,
@@ -28,6 +35,7 @@ import {
 } from "../hooks/useScheduleExceptionMutations";
 import { useConflictResolution } from "../hooks/useConflictResolution";
 import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
+import { useAuth } from "@/features/auth/AuthProvider";
 import type { ConflictResolution, ScheduleDayItem } from "@/types/schedule";
 
 interface AdjustTimeSectionProps {
@@ -43,6 +51,8 @@ interface AdjustTimeSectionProps {
  */
 export function AdjustTimeSection({ item, onSaved }: AdjustTimeSectionProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const { user } = useAuth();
+  const timezone = user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const createException = useCreateScheduleException();
   const updateException = useUpdateScheduleException();
   const conflict = useConflictResolution();
@@ -61,6 +71,16 @@ export function AdjustTimeSection({ item, onSaved }: AdjustTimeSectionProps) {
     values: MoveExceptionFormValues,
     resolution?: Exclude<ConflictResolution, "CANCEL">,
   ) {
+    // Caught client-side for a clear inline message — the backend also enforces this, but
+    // its rejection surfaces as a generic "check the highlighted fields" toast otherwise.
+    if (
+      item.date === todayInTimeZone(timezone) &&
+      values.startTime < nowTimeInTimeZone(timezone)
+    ) {
+      form.setError("startTime", { message: "Start time has already passed today" });
+      return;
+    }
+
     const onSuccess = () => {
       toast.success("Updated for this date");
       setIsEditing(false);

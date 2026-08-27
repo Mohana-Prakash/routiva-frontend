@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MoreVertical, Pencil, Archive, ArchiveRestore, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,13 @@ function describeRecurrence(entry: ScheduleEntry): string {
     : "Selected weekdays";
 }
 
-export function ScheduleEntryList() {
+interface ScheduleEntryListProps {
+  /** Deep-link from the Edit Activity dialog's "Manage schedule" link — auto-opens that
+   * activity's entry for editing once entries have loaded. */
+  autoEditActivityId?: string | null;
+}
+
+export function ScheduleEntryList({ autoEditActivityId }: ScheduleEntryListProps = {}) {
   const {
     data: entries,
     isLoading,
@@ -58,6 +64,20 @@ export function ScheduleEntryList() {
   const deactivateEntry = useDeleteScheduleEntry();
   const updateEntry = useUpdateScheduleEntry();
   const confirm = useConfirmDialog();
+  const autoEditConsumedFor = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!autoEditActivityId || !entries) return;
+    if (autoEditConsumedFor.current === autoEditActivityId) return;
+    autoEditConsumedFor.current = autoEditActivityId;
+
+    const match = entries.find((entry) => entry.activityId === autoEditActivityId);
+    if (match) {
+      setEditing(match);
+    } else {
+      toast.info("This activity isn't on your recurring schedule yet — tap \"Add to Schedule\" to add it.");
+    }
+  }, [autoEditActivityId, entries]);
 
   if (isLoading) return <LoadingSkeletonList count={4} />;
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;

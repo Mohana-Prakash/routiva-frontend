@@ -131,6 +131,9 @@ export function ActivityDetailSheet({
   const canSkip =
     !timeHasEnded &&
     (log?.status === "PLANNED" || log?.status === "IN_PROGRESS");
+  // Once tracking has moved past PLANNED (started, completed, or skipped), the planned time is
+  // historical — editing it would retroactively contradict data already recorded against it.
+  const canAdjustTime = !log || log.status === "PLANNED";
 
   return (
     <>
@@ -269,7 +272,9 @@ export function ActivityDetailSheet({
                 />
               )}
 
-            {!isTimeless && <AdjustTimeSection key={item.id} item={item} />}
+            {!isTimeless && canAdjustTime && (
+              <AdjustTimeSection key={item.id} item={item} />
+            )}
           </div>
 
           <SheetFooter>

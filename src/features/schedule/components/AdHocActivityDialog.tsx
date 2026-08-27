@@ -42,7 +42,7 @@ import { useConflictResolution } from "../hooks/useConflictResolution";
 import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
 import { ActivityFormDialog } from "@/features/activities/components/ActivityFormDialog";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
-import { formatDurationMinutes, isValidTimeString, minutesBetween, nowTimeInTimeZone } from "@/lib/datetime/time";
+import { formatDurationMinutes, isValidTimeString, minutesBetween, nowTimeInTimeZone, todayInTimeZone } from "@/lib/datetime/time";
 import { useAuth } from "@/features/auth/AuthProvider";
 import type { ConflictResolution } from "@/types/schedule";
 
@@ -114,6 +114,18 @@ export function AdHocActivityDialog({
     values: AdHocActivityFormValues,
     resolution?: Exclude<ConflictResolution, "CANCEL">,
   ) {
+    // Caught client-side for a clear inline message — the backend also enforces this, but
+    // its rejection surfaces as a generic "check the highlighted fields" toast otherwise.
+    if (
+      !values.timeless &&
+      values.startTime &&
+      values.date === todayInTimeZone(timezone) &&
+      values.startTime < nowTimeInTimeZone(timezone)
+    ) {
+      form.setError("startTime", { message: "Start time has already passed today" });
+      return;
+    }
+
     createException.mutate(
       {
         activityId: values.activityId,

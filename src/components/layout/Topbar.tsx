@@ -1,15 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { HelpCircle } from "lucide-react";
 import { NAV_ITEMS } from "./nav-items";
 import { UserMenu } from "./UserMenu";
+import { Button } from "@/components/ui/button";
 import { env } from "@/lib/env";
 
+// Routes reachable outside the primary nav (NAV_ITEMS) that still need a Topbar title.
+const EXTRA_TITLES: Record<string, string> = {
+  "/guide": "Guide",
+};
+
 function currentTitle(pathname: string | null): string {
+  const extraTitle = Object.entries(EXTRA_TITLES).find(([href]) => pathname?.startsWith(href))?.[1];
   return (
-    NAV_ITEMS.find((item) => pathname?.startsWith(item.href))?.label ??
-    env.appName
+    NAV_ITEMS.find((item) => pathname?.startsWith(item.href))?.label ?? extraTitle ?? env.appName
   );
 }
 
@@ -27,7 +35,19 @@ export function Topbar() {
       <h1 className="hidden text-base font-semibold md:block">
         {currentTitle(pathname)}
       </h1>
-      <UserMenu />
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          nativeButton={false}
+          render={<Link href="/guide" />}
+          aria-label="How this app works"
+          aria-current={pathname === "/guide" ? "page" : undefined}
+        >
+          <HelpCircle className="h-5 w-5" aria-hidden="true" />
+        </Button>
+        <UserMenu />
+      </div>
     </header>
   );
 }

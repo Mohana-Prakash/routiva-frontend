@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 import { Button } from "@/components/ui/button";
 import { LoadingSkeletonList } from "@/components/shared/LoadingSkeleton";
+import { GettingStartedChecklist } from "@/components/shared/GettingStartedChecklist";
 import { DailyTimeline } from "@/features/schedule/components/DailyTimeline";
 import { AdHocActivityDialog } from "@/features/schedule/components/AdHocActivityDialog";
 import { CurrentActivityCard } from "@/features/tracking/components/CurrentActivityCard";
@@ -71,6 +72,8 @@ function DashboardContent() {
           </Button>
         </div>
       </div>
+
+      <GettingStartedChecklist />
 
       {current && <CurrentActivityCard item={current} nowTime={nowTime} />}
       {next && <NextActivityCard item={next} nowTime={nowTime} />}

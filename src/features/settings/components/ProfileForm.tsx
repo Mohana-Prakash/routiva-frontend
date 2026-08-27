@@ -45,7 +45,9 @@ export function ProfileForm() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Avatar className="h-14 w-14 text-base">
-          <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+          <AvatarFallback className="bg-primary/15 font-medium text-primary">
+            {getInitials(user.name)}
+          </AvatarFallback>
         </Avatar>
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{user.name}</p>

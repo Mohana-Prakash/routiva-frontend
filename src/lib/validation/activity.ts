@@ -5,12 +5,6 @@ export const activitySchema = z
     categoryId: z.string().optional(),
     name: z.string().trim().min(1, "Name is required").max(120, "Name is too long"),
     description: z.string().trim().max(500, "Notes are too long").optional(),
-    defaultDurationMinutes: z
-      .number({ required_error: "Enter a duration", invalid_type_error: "Enter a duration" })
-      .int()
-      .min(1, "Must be at least 1 minute")
-      .max(24 * 60, "Must be less than 24 hours")
-      .optional(),
     alarmEnabled: z.boolean(),
     alarmOffsetMinutes: z.number().int().min(0).max(180).optional(),
   })

@@ -28,7 +28,6 @@ import { LoadingSkeletonList } from "@/components/shared/LoadingSkeleton";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
-import { formatDurationMinutes } from "@/lib/datetime/time";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { useActivities } from "../hooks/useActivities";
 import { useCategories } from "@/features/categories/hooks/useCategories";
@@ -124,11 +123,6 @@ export function ActivityList() {
                         />
                       ) : (
                         <span className="text-muted-foreground/70">No category</span>
-                      )}
-                      {activity.defaultDurationMinutes && (
-                        <span>
-                          {formatDurationMinutes(activity.defaultDurationMinutes)}
-                        </span>
                       )}
                       <span className="inline-flex items-center gap-1">
                         {activity.alarmEnabled ? (

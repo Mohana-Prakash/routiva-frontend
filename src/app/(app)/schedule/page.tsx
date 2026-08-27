@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { DailyTimeline } from "@/features/schedule/components/DailyTimeline";
@@ -19,9 +20,19 @@ export default function SchedulePage() {
   const [adHocOpen, setAdHocOpen] = useState(false);
   const { data, isLoading, isError, error, refetch } = useDaySchedule(date);
 
+  // Supports deep-linking here from the Edit Activity dialog's "Manage schedule" link
+  // (?tab=base&activityId=...) — synced via effect rather than derived inline so navigating
+  // here again with a new activityId while already mounted on this page still picks it up.
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState(searchParams.get("tab") === "base" ? "base" : "daily");
+  const highlightActivityId = searchParams.get("activityId");
+  useEffect(() => {
+    setTab(searchParams.get("tab") === "base" ? "base" : "daily");
+  }, [searchParams]);
+
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
-      <Tabs defaultValue="daily">
+      <Tabs value={tab} onValueChange={(v) => v && setTab(v as string)}>
         <TabsList>
           <TabsTrigger value="daily">Daily View</TabsTrigger>
           <TabsTrigger value="base">Base Schedule</TabsTrigger>
@@ -48,7 +59,9 @@ export default function SchedulePage() {
         </TabsContent>
 
         <TabsContent value="base" className="mt-4">
-          <ScheduleEntryList />
+          <ScheduleEntryList
+            autoEditActivityId={tab === "base" ? highlightActivityId : null}
+          />
         </TabsContent>
       </Tabs>
 

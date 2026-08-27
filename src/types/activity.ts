@@ -6,7 +6,6 @@ export interface Activity {
   categoryId: string | null;
   name: string;
   description: string | null;
-  defaultDurationMinutes: number | null;
   alarmEnabled: boolean;
   alarmOffsetMinutes: number | null;
   isActive: boolean;
@@ -19,7 +18,6 @@ export interface CreateActivityInput {
   categoryId?: string | null;
   name: string;
   description?: string | null;
-  defaultDurationMinutes?: number | null;
   alarmEnabled: boolean;
   alarmOffsetMinutes?: number | null;
 }
@@ -28,7 +26,6 @@ export interface UpdateActivityInput {
   categoryId?: string | null;
   name?: string;
   description?: string | null;
-  defaultDurationMinutes?: number | null;
   alarmEnabled?: boolean;
   alarmOffsetMinutes?: number | null;
   isActive?: boolean;
