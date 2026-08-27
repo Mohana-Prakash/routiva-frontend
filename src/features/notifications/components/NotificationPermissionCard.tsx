@@ -23,6 +23,14 @@ export function NotificationPermissionCard() {
       subscribe.mutate(undefined, { onError: (error) => toast.error(getFriendlyErrorMessage(error)) });
     } else if (result === "denied") {
       toast.error("Notifications are blocked. Enable them in your browser's site settings to receive reminders.");
+    } else {
+      // Neither granted nor denied: the browser declined to show a prompt at all. Chrome does
+      // this ("quiet permission UI") when it predicts a low grant rate — the fallback UI for it
+      // lives in the address bar, which doesn't exist in a standalone/installed PWA, so on a
+      // home-screen app this is otherwise a silent, unexplained no-op.
+      toast.info(
+        "Your browser didn't show a permission prompt. Try opening this app in your regular browser (not the installed/home-screen version) and allow notifications there once — it'll then work here too.",
+      );
     }
   }
 
