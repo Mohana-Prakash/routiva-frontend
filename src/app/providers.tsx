@@ -8,6 +8,7 @@ import { AuthProvider } from "@/features/auth/AuthProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { AlarmSoundListener } from "@/components/shared/AlarmSoundListener";
+import { ResyncOnResume } from "@/components/shared/ResyncOnResume";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(createQueryClient);
@@ -17,6 +18,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <AuthProvider>
         <TooltipProvider>
           <AlarmSoundListener />
+          <ResyncOnResume />
           {children}
           <Toaster richColors closeButton position="top-center" />
         </TooltipProvider>
