@@ -45,9 +45,12 @@ interface ScheduleEntryListProps {
   /** Deep-link from the Edit Activity dialog's "Manage schedule" link — auto-opens that
    * activity's entry for editing once entries have loaded. */
   autoEditActivityId?: string | null;
+  /** Called once autoEditActivityId has been acted on (matched or not) — the caller should
+   * drop it from the URL so revisiting this tab doesn't replay the same toast/dialog. */
+  onAutoEditHandled?: () => void;
 }
 
-export function ScheduleEntryList({ autoEditActivityId }: ScheduleEntryListProps = {}) {
+export function ScheduleEntryList({ autoEditActivityId, onAutoEditHandled }: ScheduleEntryListProps = {}) {
   const {
     data: entries,
     isLoading,
@@ -77,6 +80,11 @@ export function ScheduleEntryList({ autoEditActivityId }: ScheduleEntryListProps
     } else {
       toast.info("This activity isn't on your recurring schedule yet — tap \"Add to Schedule\" to add it.");
     }
+    onAutoEditHandled?.();
+    // onAutoEditHandled intentionally omitted — it's a fresh closure each render (clears a
+    // searchParams-derived value), and including it would re-run this effect right after it
+    // fires, before the URL update has propagated back down as a new (null) autoEditActivityId.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoEditActivityId, entries]);
 
   if (isLoading) return <LoadingSkeletonList count={4} />;

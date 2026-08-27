@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { DailyTimeline } from "@/features/schedule/components/DailyTimeline";
@@ -23,12 +23,20 @@ export default function SchedulePage() {
   // Supports deep-linking here from the Edit Activity dialog's "Manage schedule" link
   // (?tab=base&activityId=...) — synced via effect rather than derived inline so navigating
   // here again with a new activityId while already mounted on this page still picks it up.
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState(searchParams.get("tab") === "base" ? "base" : "daily");
   const highlightActivityId = searchParams.get("activityId");
   useEffect(() => {
     setTab(searchParams.get("tab") === "base" ? "base" : "daily");
   }, [searchParams]);
+
+  // Once ScheduleEntryList has acted on the deep-linked activityId (matched or not), drop it
+  // from the URL — otherwise it's still there the next time the user switches back to this
+  // tab (which remounts ScheduleEntryList) and the same toast/dialog fires again.
+  function clearActivityDeepLink() {
+    router.replace("/schedule?tab=base", { scroll: false });
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
@@ -61,6 +69,7 @@ export default function SchedulePage() {
         <TabsContent value="base" className="mt-4">
           <ScheduleEntryList
             autoEditActivityId={tab === "base" ? highlightActivityId : null}
+            onAutoEditHandled={clearActivityDeepLink}
           />
         </TabsContent>
       </Tabs>
