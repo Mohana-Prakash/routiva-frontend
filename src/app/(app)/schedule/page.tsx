@@ -61,13 +61,15 @@ export default function SchedulePage() {
         <TabsContent value="daily" className="mt-4 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <DayNavigator date={date} todayDate={todayDate} onChange={setDate} />
-            <Button size="sm" onClick={() => setAdHocOpen(true)}>
-              + Add Activity
-            </Button>
+            <div className="flex items-center gap-2">
+              {!isLoading && !isError && !!data?.items.length && (
+                <StatusFilter value={statusFilter} onChange={setStatusFilter} />
+              )}
+              <Button size="sm" onClick={() => setAdHocOpen(true)}>
+                + Add Activity
+              </Button>
+            </div>
           </div>
-          {!isLoading && !isError && !!data?.items.length && (
-            <StatusFilter value={statusFilter} onChange={setStatusFilter} />
-          )}
           {hidesEverything ? (
             <EmptyState
               icon={FilterX}

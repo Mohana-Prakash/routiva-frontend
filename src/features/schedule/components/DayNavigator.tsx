@@ -1,8 +1,10 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { formatDateLabel } from "@/lib/datetime/time";
 
 interface DayNavigatorProps {
@@ -11,8 +13,23 @@ interface DayNavigatorProps {
   onChange: (date: string) => void;
 }
 
+/** "YYYY-MM-DD" parsed as a local calendar date (no timezone shifting) for react-day-picker. */
+function parseDateString(value: string): Date {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function toDateString(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function DayNavigator({ date, todayDate, onChange }: DayNavigatorProps) {
+  const [pickerOpen, setPickerOpen] = useState(false);
   const isAtOrPastToday = date >= todayDate;
+  const isToday = date === todayDate;
 
   function shiftDay(offsetDays: number) {
     // Do the arithmetic entirely in UTC. Parsing `${date}T00:00:00` (no "Z") reads it as
@@ -27,24 +44,36 @@ export function DayNavigator({ date, todayDate, onChange }: DayNavigatorProps) {
     onChange(nextDate);
   }
 
-  function handlePickDate(value: string) {
-    if (!value) return;
-    onChange(value > todayDate ? todayDate : value);
-  }
-
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex items-center gap-1">
       <Button variant="outline" size="icon-sm" aria-label="Previous day" onClick={() => shiftDay(-1)}>
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <Input
-        type="date"
-        value={date}
-        max={todayDate}
-        onChange={(e) => handlePickDate(e.target.value)}
-        className="w-40"
-        aria-label="Select date"
-      />
+
+      <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+        <PopoverTrigger
+          render={
+            <Button variant="ghost" className="min-w-36 justify-start font-medium">
+              <CalendarDays className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              {isToday ? "Today" : formatDateLabel(date)}
+            </Button>
+          }
+        />
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={parseDateString(date)}
+            defaultMonth={parseDateString(date)}
+            disabled={{ after: parseDateString(todayDate) }}
+            onSelect={(picked) => {
+              if (!picked) return;
+              onChange(toDateString(picked));
+              setPickerOpen(false);
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+
       <Button
         variant="outline"
         size="icon-sm"
@@ -54,12 +83,12 @@ export function DayNavigator({ date, todayDate, onChange }: DayNavigatorProps) {
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
-      {date !== todayDate && (
+
+      {!isToday && (
         <Button variant="ghost" size="sm" onClick={() => onChange(todayDate)}>
           Today
         </Button>
       )}
-      <span className="text-sm font-medium text-muted-foreground">{formatDateLabel(date)}</span>
     </div>
   );
 }
