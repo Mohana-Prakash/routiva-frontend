@@ -43,8 +43,10 @@ import {
 import { useConflictResolution } from "../hooks/useConflictResolution";
 import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
 import { RecurrenceField } from "./RecurrenceField";
+import { ReminderTimeField } from "./ReminderTimeField";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
-import { formatDurationMinutes, isValidTimeString, minutesBetween } from "@/lib/datetime/time";
+import { formatDurationMinutes, isValidTimeString, minutesBetween, nowTimeInTimeZone } from "@/lib/datetime/time";
+import { useAuth } from "@/features/auth/AuthProvider";
 import type {
   ConflictResolution,
   ScheduleEntry,
@@ -63,6 +65,9 @@ export function ScheduleEntryFormDialog({
   entry,
 }: ScheduleEntryFormDialogProps) {
   const isEditing = !!entry;
+  const { user } = useAuth();
+  const timezone =
+    user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const { data: activities, isLoading: activitiesLoading } =
     useActiveActivities();
   const createEntry = useCreateScheduleEntry();
@@ -84,11 +89,12 @@ export function ScheduleEntryFormDialog({
 
   useEffect(() => {
     if (open) {
+      const now = nowTimeInTimeZone(timezone);
       form.reset({
         activityId: entry?.activityId ?? activities?.[0]?.id ?? "",
         timeless: !!entry && !entry.startTime,
-        startTime: entry?.startTime ?? "",
-        endTime: entry?.endTime ?? "",
+        startTime: entry?.startTime ?? now,
+        endTime: entry?.endTime ?? now,
         timelessReminderTime: entry?.timelessReminderTime ?? "",
         recurrence: entry?.recurrence ?? { type: "DAILY" },
       });
@@ -281,13 +287,17 @@ export function ScheduleEntryFormDialog({
                     name="timelessReminderTime"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Remind me at (optional)</FormLabel>
+                        <FormLabel htmlFor="entry-reminder-time">Remind me at (optional)</FormLabel>
                         <FormControl>
-                          <Input type="time" {...field} />
+                          <ReminderTimeField
+                            id="entry-reminder-time"
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                          />
                         </FormControl>
                         <p className="text-xs text-muted-foreground">
                           Since this activity has no fixed time, pick a time of day to get
-                          reminded — leave blank for no reminder.
+                          reminded.
                         </p>
                         <FormMessage />
                       </FormItem>
