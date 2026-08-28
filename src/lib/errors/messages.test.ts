@@ -11,7 +11,7 @@ describe("getFriendlyErrorMessage", () => {
       "This overlaps with another activity.",
     );
     expect(getFriendlyErrorMessage(new ApiError({ code: "INVALID_CREDENTIALS", message: "bad creds", status: 401 }))).toBe(
-      "Incorrect email or password.",
+      "Incorrect password.",
     );
   });
 

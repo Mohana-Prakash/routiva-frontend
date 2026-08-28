@@ -34,8 +34,12 @@ export function LoginForm() {
         router.replace(redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard");
       },
       onError: (error) => {
+        if (error instanceof ApiError && error.code === "EMAIL_NOT_FOUND") {
+          form.setError("email", { message: "No account found with this email." });
+          return;
+        }
         if (error instanceof ApiError && error.code === "INVALID_CREDENTIALS") {
-          form.setError("password", { message: "Incorrect email or password." });
+          form.setError("password", { message: "Incorrect password." });
           return;
         }
         toast.error(getFriendlyErrorMessage(error));

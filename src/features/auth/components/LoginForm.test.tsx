@@ -71,7 +71,20 @@ describe("LoginForm", () => {
     await user.type(screen.getByLabelText("Password"), "wrong-password");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
-    expect(await screen.findByText("Incorrect email or password.")).toBeInTheDocument();
+    expect(await screen.findByText("Incorrect password.")).toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("shows an inline email error when no account exists for that email", async () => {
+    vi.mocked(authApi.login).mockRejectedValue(new ApiError({ code: "EMAIL_NOT_FOUND", message: "bad", status: 401 }));
+    const user = userEvent.setup();
+    renderWithQueryClient(<LoginForm />);
+
+    await user.type(screen.getByLabelText("Email"), "nobody@example.com");
+    await user.type(screen.getByLabelText("Password"), "some-password");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(await screen.findByText("No account found with this email.")).toBeInTheDocument();
     expect(replace).not.toHaveBeenCalled();
   });
 });

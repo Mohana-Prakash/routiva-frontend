@@ -8,7 +8,8 @@ import { ApiError, type ApiErrorCode } from "@/types/api";
 const CODE_MESSAGES: Record<ApiErrorCode | "NETWORK_ERROR", string> = {
   VALIDATION_ERROR: "Please check the highlighted fields and try again.",
   AUTH_REQUIRED: "Please sign in to continue.",
-  INVALID_CREDENTIALS: "Incorrect email or password.",
+  EMAIL_NOT_FOUND: "No account found with this email.",
+  INVALID_CREDENTIALS: "Incorrect password.",
   SESSION_EXPIRED: "Your session has expired. Please sign in again.",
   RESOURCE_NOT_FOUND: "We couldn't find what you were looking for.",
   RESOURCE_FORBIDDEN: "You do not have permission to do that.",
