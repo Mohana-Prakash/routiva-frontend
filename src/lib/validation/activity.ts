@@ -16,6 +16,8 @@ export type ActivityFormValues = z.infer<typeof activitySchema>;
 
 export const ALARM_TIMING_OPTIONS = [
   { value: 0, label: "At start" },
+  { value: 1, label: "1 minute before" },
+  { value: 2, label: "2 minutes before" },
   { value: 5, label: "5 minutes before" },
   { value: 10, label: "10 minutes before" },
   { value: 15, label: "15 minutes before" },
