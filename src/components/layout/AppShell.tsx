@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { Topbar } from "./Topbar";
 import { NetworkStatusBanner } from "./NetworkStatusBanner";
+import { NotificationStatusBanner } from "@/features/notifications/components/NotificationStatusBanner";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
         <Topbar />
         <NetworkStatusBanner />
+        <NotificationStatusBanner />
         <main className="flex-1 pb-20 md:pb-6">{children}</main>
         <BottomNav />
       </div>
