@@ -69,12 +69,14 @@ export function TimelineItem({
   const timeHasEnded =
     !isTimeless &&
     combineDateAndEndTime(date, item.startTime as string, item.endTime as string, timezone).getTime() < now.getTime();
-  // Complete has no upper-bound gate: the system never assumes an outcome just because the
-  // planned window passed. A PLANNED log the backend has swept to MISSED still gets
+  // Start has an upper bound Complete doesn't: once the window has closed without it being
+  // started, "starting" it now is meaningless — Complete is still the honest way to log it (see
+  // below). Complete itself has no upper-bound gate: the system never assumes an outcome just
+  // because the planned window passed. A PLANNED log the backend has swept to MISSED still gets
   // Complete/Skip — that status is a "wasn't acted on in time" label, not a final verdict —
   // and an IN_PROGRESS log stays completable indefinitely rather than being silently
   // auto-completed.
-  const canStart = logStatus === "PLANNED" && timeHasArrived;
+  const canStart = logStatus === "PLANNED" && timeHasArrived && !timeHasEnded;
   const canComplete =
     logStatus === "IN_PROGRESS" ||
     logStatus === "MISSED" ||

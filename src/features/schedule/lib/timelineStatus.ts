@@ -1,6 +1,6 @@
 import type { ScheduleDayItem } from "@/types/schedule";
 import type { TimelineDisplayStatus } from "@/types/activity-log";
-import { isTimeNowWithinRange } from "@/lib/datetime/time";
+import { isTimeNowAfterRange, isTimeNowWithinRange } from "@/lib/datetime/time";
 
 /**
  * Derives the UI-facing timeline status (frontend-requirements 02 §4) from the
@@ -26,7 +26,12 @@ export function getTimelineDisplayStatus(item: ScheduleDayItem, nowTime: string)
     default:
       // Timeless (no fixed slot) is always available today — never "Upcoming".
       if (!item.startTime || !item.endTime) return "CURRENT";
-      // PLANNED or no log yet — derive upcoming/current from wall-clock time.
-      return isTimeNowWithinRange(item.startTime, item.endTime, nowTime) ? "CURRENT" : "UPCOMING";
+      // PLANNED or no log yet — derive upcoming/current/missed-looking from wall-clock time.
+      // The backend only actually flips a log to MISSED on its own sweep (every 10 minutes),
+      // so without this, an item whose window just closed would sit labeled "Upcoming" — and
+      // still offer Start — for up to 10 minutes after it's clearly no longer upcoming.
+      if (isTimeNowWithinRange(item.startTime, item.endTime, nowTime)) return "CURRENT";
+      if (isTimeNowAfterRange(item.startTime, item.endTime, nowTime)) return "MISSED";
+      return "UPCOMING";
   }
 }

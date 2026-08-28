@@ -3,6 +3,7 @@ import {
   combineDateAndEndTime,
   combineDateAndTime,
   formatDurationMinutes,
+  isTimeNowAfterRange,
   isTimeNowWithinRange,
   isValidTimeString,
   minutesBetween,
@@ -121,6 +122,29 @@ describe("isTimeNowWithinRange", () => {
 
   it("is false before a midnight-crossing range has started", () => {
     expect(isTimeNowWithinRange("23:30", "00:30", "22:00")).toBe(false);
+  });
+});
+
+describe("isTimeNowAfterRange", () => {
+  it("is true once the same-day range has ended", () => {
+    expect(isTimeNowAfterRange("18:44", "18:46", "18:48")).toBe(true);
+  });
+
+  it("is true at the exact end — inclusive, matching isTimeNowWithinRange's exclusive upper bound so nothing falls in a gap between the two", () => {
+    expect(isTimeNowAfterRange("18:00", "18:30", "18:30")).toBe(true);
+  });
+
+  it("is false before the range has even started", () => {
+    expect(isTimeNowAfterRange("18:00", "18:30", "17:00")).toBe(false);
+  });
+
+  it("is false while still within the range", () => {
+    expect(isTimeNowAfterRange("18:00", "18:30", "18:15")).toBe(false);
+  });
+
+  it("is always false for a midnight-crossing range — not enough information in bare HH:mm to tell 'just past this morning's end' from 'well before tonight's start'", () => {
+    expect(isTimeNowAfterRange("22:30", "06:00", "12:00")).toBe(false);
+    expect(isTimeNowAfterRange("22:30", "06:00", "23:45")).toBe(false);
   });
 });
 

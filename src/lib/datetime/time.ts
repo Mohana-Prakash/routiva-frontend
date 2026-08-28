@@ -90,6 +90,20 @@ export function isTimeNowWithinRange(start: TimeString, end: TimeString, nowTime
   return (now >= startMin && now < endMin) || (now + 24 * 60 >= startMin && now + 24 * 60 < endMin);
 }
 
+/**
+ * Whether `nowTime` is past `end`, for a same-day (non-midnight-crossing) range only. Deliberately
+ * returns false for a range where `end <= start` (e.g. an overnight 22:00–06:00 slot) rather than
+ * guessing — from bare "HH:mm" strings with no date, there's no way to tell "just past this
+ * morning's end" apart from "well before tonight's start", and getting that wrong would wrongly
+ * flag an upcoming overnight occurrence as already missed.
+ */
+export function isTimeNowAfterRange(start: TimeString, end: TimeString, nowTime: TimeString): boolean {
+  const startMin = toMinutes(start);
+  const endMin = toMinutes(end);
+  if (endMin <= startMin) return false;
+  return toMinutes(nowTime) >= endMin;
+}
+
 function toDaySegments(start: TimeString, end: TimeString): [number, number][] {
   const startMinutes = toMinutes(start);
   let endMinutes = toMinutes(end);

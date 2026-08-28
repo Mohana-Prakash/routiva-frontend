@@ -111,9 +111,11 @@ export function ActivityDetailSheet({
 
   const isTrackingPending = startActivity.isPending || skipActivity.isPending;
   // Same gates as the timeline row: Start/Complete only once the scheduled time has actually
-  // arrived, and Complete has no upper bound — the system never assumes an outcome just
-  // because the planned window passed (including on a MISSED log, which just means the window
-  // passed without being acted on, not a final verdict). Timeless items are available all day.
+  // arrived, Start also cuts off once the window has closed (starting something after it's
+  // already over is meaningless), and Complete has no upper bound — the system never assumes
+  // an outcome just because the planned window passed (including on a MISSED log, which just
+  // means the window passed without being acted on, not a final verdict). Timeless items are
+  // available all day.
   const isTimeless = !item.startTime || !item.endTime;
   const timeHasArrived =
     isTimeless ||
@@ -123,7 +125,7 @@ export function ActivityDetailSheet({
     !isTimeless &&
     combineDateAndEndTime(item.date, item.startTime as string, item.endTime as string, timezone).getTime() <
       now.getTime();
-  const canStart = log?.status === "PLANNED" && timeHasArrived;
+  const canStart = log?.status === "PLANNED" && timeHasArrived && !timeHasEnded;
   const canComplete =
     log?.status === "IN_PROGRESS" ||
     log?.status === "MISSED" ||

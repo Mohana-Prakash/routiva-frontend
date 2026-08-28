@@ -66,9 +66,15 @@ describe("getTimelineDisplayStatus", () => {
     expect(getTimelineDisplayStatus(makeItem("18:00", "18:30", "PLANNED"), "17:00")).toBe("UPCOMING");
   });
 
-  it("treats a missing log the same as PLANNED", () => {
+  it("shows MISSED as soon as the window closes on a still-PLANNED item, without waiting for the backend's own sweep", () => {
+    expect(getTimelineDisplayStatus(makeItem("18:00", "18:30", "PLANNED"), "18:30")).toBe("MISSED");
+    expect(getTimelineDisplayStatus(makeItem("18:44", "18:46", "PLANNED"), "18:48")).toBe("MISSED");
+  });
+
+  it("treats a missing log the same as PLANNED, including going straight to MISSED once its window closes", () => {
     expect(getTimelineDisplayStatus(makeItem("18:00", "18:30", undefined), "18:15")).toBe("CURRENT");
     expect(getTimelineDisplayStatus(makeItem("18:00", "18:30", undefined), "09:00")).toBe("UPCOMING");
+    expect(getTimelineDisplayStatus(makeItem("18:00", "18:30", undefined), "19:00")).toBe("MISSED");
   });
 
   it("handles a midnight-crossing planned item", () => {

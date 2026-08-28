@@ -161,13 +161,13 @@ describe("TimelineItem", () => {
     expect(screen.getByRole("button", { name: "Skip" })).toBeInTheDocument();
   });
 
-  it("keeps Start/Complete available once the scheduled end time has passed, but drops Skip for a still-PLANNED (never started) activity", () => {
+  it("drops Start (but keeps Complete) once the scheduled end time has passed for a still-PLANNED (never started) activity — starting something whose window already closed is meaningless, but Complete stays the honest way to log it", () => {
     const overdueItem: ScheduleDayItem = { ...plannedItem, startTime: ENDED_START, endTime: ENDED_END };
     renderWithQueryClient(
       <TimelineItem item={overdueItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
     );
 
-    expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Complete" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument();
   });
