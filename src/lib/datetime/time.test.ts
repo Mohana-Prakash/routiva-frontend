@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  combineDateAndEndTime,
   combineDateAndTime,
   formatDurationMinutes,
   isTimeNowWithinRange,
@@ -25,6 +26,29 @@ describe("combineDateAndTime", () => {
   it("is a no-op shift for UTC itself", () => {
     const result = combineDateAndTime("2026-08-21", "18:00", "UTC");
     expect(result.toISOString()).toBe("2026-08-21T18:00:00.000Z");
+  });
+});
+
+describe("combineDateAndEndTime", () => {
+  it("stays on the same day for a normal (non-overnight) range", () => {
+    const result = combineDateAndEndTime("2026-08-21", "18:00", "18:30", "UTC");
+    expect(result.toISOString()).toBe("2026-08-21T18:30:00.000Z");
+  });
+
+  it("rolls onto the next day when the end time crosses midnight", () => {
+    // e.g. a Sleep activity scheduled 22:00-03:55 — the end belongs to the following date.
+    const result = combineDateAndEndTime("2026-08-21", "22:00", "03:55", "UTC");
+    expect(result.toISOString()).toBe("2026-08-22T03:55:00.000Z");
+  });
+
+  it("treats an identical start/end as a full-day span rolling to the next day", () => {
+    const result = combineDateAndEndTime("2026-08-21", "09:00", "09:00", "UTC");
+    expect(result.toISOString()).toBe("2026-08-22T09:00:00.000Z");
+  });
+
+  it("rolls correctly across a month boundary", () => {
+    const result = combineDateAndEndTime("2026-08-31", "23:00", "01:00", "UTC");
+    expect(result.toISOString()).toBe("2026-09-01T01:00:00.000Z");
   });
 });
 

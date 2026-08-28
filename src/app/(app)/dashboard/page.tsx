@@ -75,7 +75,14 @@ function DashboardContent() {
 
       <GettingStartedChecklist />
 
-      {current && <CurrentActivityCard item={current} nowTime={nowTime} />}
+      {current && (
+        <CurrentActivityCard
+          item={current}
+          nowTime={nowTime}
+          date={data?.date ?? todayInTimeZone(timezone)}
+          timezone={timezone}
+        />
+      )}
       {next && <NextActivityCard item={next} nowTime={nowTime} />}
       {summary && <DailySummaryCard summary={summary} />}
 

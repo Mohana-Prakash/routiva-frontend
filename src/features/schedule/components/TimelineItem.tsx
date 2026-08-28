@@ -5,7 +5,7 @@ import { BellRing, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
-import { combineDateAndTime, formatDurationMinutes, minutesBetween } from "@/lib/datetime/time";
+import { combineDateAndEndTime, combineDateAndTime, formatDurationMinutes, minutesBetween } from "@/lib/datetime/time";
 import { getTimelineDisplayStatus } from "../lib/timelineStatus";
 import { TIMELINE_STATUS_PRESENTATION } from "./timelineStatusPresentation";
 import { SOURCE_PRESENTATION } from "./sourcePresentation";
@@ -67,7 +67,8 @@ export function TimelineItem({
   const timeHasArrived =
     isTimeless || combineDateAndTime(date, item.startTime as string, timezone).getTime() <= now.getTime();
   const timeHasEnded =
-    !isTimeless && combineDateAndTime(date, item.endTime as string, timezone).getTime() < now.getTime();
+    !isTimeless &&
+    combineDateAndEndTime(date, item.startTime as string, item.endTime as string, timezone).getTime() < now.getTime();
   // Complete has no upper-bound gate: the system never assumes an outcome just because the
   // planned window passed. A PLANNED log the backend has swept to MISSED still gets
   // Complete/Skip — that status is a "wasn't acted on in time" label, not a final verdict —

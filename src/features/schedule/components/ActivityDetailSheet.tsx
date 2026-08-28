@@ -19,6 +19,7 @@ import {
 } from "@/components/shared/ConfirmDialog";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
 import {
+  combineDateAndEndTime,
   combineDateAndTime,
   formatDateLabel,
   formatDurationMinutes,
@@ -99,7 +100,7 @@ export function ActivityDetailSheet({
       },
       {
         onSuccess: () => {
-          toast.success("Skipped for this date");
+          toast.success("Removed from today's schedule");
           removeConfirm.hide();
           onOpenChange(false);
         },
@@ -120,7 +121,8 @@ export function ActivityDetailSheet({
       now.getTime();
   const timeHasEnded =
     !isTimeless &&
-    combineDateAndTime(item.date, item.endTime as string, timezone).getTime() < now.getTime();
+    combineDateAndEndTime(item.date, item.startTime as string, item.endTime as string, timezone).getTime() <
+      now.getTime();
   const canStart = log?.status === "PLANNED" && timeHasArrived;
   const canComplete =
     log?.status === "IN_PROGRESS" ||
@@ -273,7 +275,7 @@ export function ActivityDetailSheet({
           <SheetFooter>
             <Button variant="destructive" onClick={removeConfirm.show}>
               <Trash2 className="h-4 w-4" />
-              {item.source === "BASE" ? "Skip for this date" : "Remove"}
+              {item.source === "BASE" ? "Remove from today" : "Remove"}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -284,11 +286,15 @@ export function ActivityDetailSheet({
         onOpenChange={removeConfirm.onOpenChange}
         title={
           item.source === "BASE"
-            ? `Skip "${item.activityName}" for this date?`
+            ? `Remove "${item.activityName}" from today?`
             : `Remove "${item.activityName}"?`
         }
-        description="Your recurring schedule and historical records are not affected."
-        confirmLabel={item.source === "BASE" ? "Skip" : "Remove"}
+        description={
+          item.source === "BASE"
+            ? "It won't appear on today's schedule. Your recurring schedule for other days and historical records are not affected."
+            : "Your historical records are not affected."
+        }
+        confirmLabel="Remove"
         destructive
         isConfirming={deleteException.isPending || createException.isPending}
         onConfirm={handleRemoveForToday}

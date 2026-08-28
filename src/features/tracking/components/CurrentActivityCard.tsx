@@ -7,27 +7,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
 import { ActivityDetailSheet } from "@/features/schedule/components/ActivityDetailSheet";
-import { formatDurationMinutes, minutesBetween, minutesUntil } from "@/lib/datetime/time";
+import { combineDateAndEndTime, formatDurationMinutes, minutesBetween, minutesUntil } from "@/lib/datetime/time";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { useSkipActivity } from "../hooks/useTrackingMutations";
 import { CompleteActivityDialog } from "./CompleteActivityDialog";
+import { useNow } from "@/hooks/useNow";
 import type { ScheduleDayItem } from "@/types/schedule";
 
 interface CurrentActivityCardProps {
   item: ScheduleDayItem;
   nowTime: string;
+  date: string;
+  timezone: string;
 }
 
-export function CurrentActivityCard({ item, nowTime }: CurrentActivityCardProps) {
+export function CurrentActivityCard({ item, nowTime, date, timezone }: CurrentActivityCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [completingItem, setCompletingItem] = useState<ScheduleDayItem | null>(null);
   const skipActivity = useSkipActivity();
+  const now = useNow();
   const isTimeless = !item.startTime || !item.endTime;
   const remaining = isTimeless ? null : minutesUntil(item.endTime as string, nowTime);
   // This card only ever shows an IN_PROGRESS activity (see dashboard/page.tsx) — once you've
   // actually started it, skipping after its window closed is meaningless, since the only
   // honest options left are Complete (say how long you actually spent) or leaving it as is.
-  const timeHasEnded = !isTimeless && nowTime >= (item.endTime as string);
+  // Uses combineDateAndEndTime (not a plain nowTime/endTime string compare) so an overnight
+  // range like 22:00-03:55 rolls its end onto the next day instead of comparing against a
+  // same-day 03:55 that's already hours in the past the moment the activity starts.
+  const timeHasEnded =
+    !isTimeless &&
+    combineDateAndEndTime(date, item.startTime as string, item.endTime as string, timezone).getTime() <
+      now.getTime();
 
   return (
     <>

@@ -1,5 +1,5 @@
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
-import { format, parseISO } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
 
 /** "HH:mm" in 24-hour time, per frontend-requirements 01 §3.4. */
 export type TimeString = string;
@@ -24,6 +24,19 @@ export function nowTimeInTimeZone(timezone: string): TimeString {
  */
 export function combineDateAndTime(date: DateString, time: TimeString, timezone: string): Date {
   return fromZonedTime(`${date}T${time}:00`, timezone);
+}
+
+/**
+ * Like `combineDateAndTime`, but for an occurrence's END time specifically — rolls onto the
+ * next calendar day when `endTime <= startTime` (an overnight range, e.g. 22:00-03:55 Sleep).
+ * Plain `combineDateAndTime(date, endTime, timezone)` would otherwise combine the end time with
+ * the *same* date the occurrence started on, landing hours in the past for the entire time the
+ * activity is actually meant to be running.
+ */
+export function combineDateAndEndTime(date: DateString, startTime: TimeString, endTime: TimeString, timezone: string): Date {
+  const crossesMidnight = toMinutes(endTime) <= toMinutes(startTime);
+  const effectiveDate = crossesMidnight ? format(addDays(parseISO(date), 1), "yyyy-MM-dd") : date;
+  return combineDateAndTime(effectiveDate, endTime, timezone);
 }
 
 export function formatIsoToTime(iso: string, timezone: string): TimeString {

@@ -1,46 +1,50 @@
-"use client";
-
-import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Card, CardContent } from "@/components/ui/card";
 import { formatDurationMinutes } from "@/lib/datetime/time";
 import type { CategoryReportItem } from "@/types/reports";
 
 /**
- * Time by category (frontend-requirements 04 §3). Each bar uses the category's
- * own color for consistency with badges elsewhere in the app, rather than a
- * generic chart palette — see dataviz skill guidance on categorical color, which
- * this project intentionally overrides in favor of per-category brand colors the
- * user already recognizes from the timeline and activity list.
+ * Time by category (frontend-requirements 04 §3). Each row labels its own value
+ * directly rather than sharing a single axis — a shared numeric axis forced every
+ * bar's height down to fit alongside cramped tick labels, which is what made this
+ * feel congested. Bar length is relative to the largest category in range, and
+ * each bar keeps the category's own color for consistency with badges elsewhere
+ * in the app (see CategoryPerformanceList below, which already breaks this same
+ * override out from the dataviz skill's generic-palette guidance).
  */
 export function CategoryBreakdownChart({ items }: { items: CategoryReportItem[] }) {
   const data = [...items].sort((a, b) => b.actualMinutes - a.actualMinutes);
-  const height = Math.max(160, data.length * 36 + 24);
+  const maxMinutes = Math.max(...data.map((item) => item.actualMinutes), 1);
 
   return (
-    <div style={{ width: "100%", height }}>
-      <ResponsiveContainer>
-        <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }} barCategoryGap={10}>
-          <XAxis type="number" tickFormatter={(v) => formatDurationMinutes(v)} stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-          <YAxis
-            type="category"
-            dataKey="categoryName"
-            width={88}
-            stroke="var(--muted-foreground)"
-            fontSize={12}
-            tickLine={false}
-            axisLine={false}
-          />
-          <Tooltip
-            cursor={{ fill: "var(--muted)" }}
-            formatter={(value) => formatDurationMinutes(Number(value ?? 0))}
-            contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-          />
-          <Bar dataKey="actualMinutes" radius={[0, 4, 4, 0]} maxBarSize={20} isAnimationActive={false}>
-            {data.map((item) => (
-              <Cell key={item.categoryId} fill={item.categoryColor} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <Card>
+      <CardContent className="space-y-5 p-4">
+        {data.map((item) => (
+          <div key={item.categoryId} className="space-y-1.5">
+            <div className="flex items-baseline justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: item.categoryColor }}
+                  aria-hidden="true"
+                />
+                <span className="truncate text-sm font-medium">{item.categoryName}</span>
+              </div>
+              <span className="shrink-0 text-sm font-medium tabular-nums text-muted-foreground">
+                {formatDurationMinutes(item.actualMinutes)}
+              </span>
+            </div>
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full transition-[width]"
+                style={{
+                  width: `${Math.max(3, (item.actualMinutes / maxMinutes) * 100)}%`,
+                  backgroundColor: item.categoryColor,
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
