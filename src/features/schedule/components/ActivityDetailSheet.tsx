@@ -19,8 +19,6 @@ import {
 } from "@/components/shared/ConfirmDialog";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
 import {
-  combineDateAndEndTime,
-  combineDateAndTime,
   formatDateLabel,
   formatDurationMinutes,
   formatIsoToTime,
@@ -41,7 +39,7 @@ import { getTimelineDisplayStatus } from "../lib/timelineStatus";
 import { TIMELINE_STATUS_PRESENTATION } from "./timelineStatusPresentation";
 import { AdjustTimeSection } from "./AdjustTimeSection";
 import { CorrectActualTimingSection } from "./CorrectActualTimingSection";
-import { useNow } from "@/hooks/useNow";
+import { useTrackingAvailability } from "../hooks/useTrackingAvailability";
 import type { ScheduleDayItem } from "@/types/schedule";
 
 interface ActivityDetailSheetProps {
@@ -68,16 +66,16 @@ export function ActivityDetailSheet({
   const skipActivity = useSkipActivity();
   const createException = useCreateScheduleException();
   const deleteException = useDeleteScheduleException();
-  const now = useNow();
   const [completingItem, setCompletingItem] = useState<ScheduleDayItem | null>(null);
+  const timezone =
+    user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const { isTimeless, canStart, canComplete, canSkip } = useTrackingAvailability(item, item?.date ?? "", timezone);
 
   if (!item) return null;
 
   const displayStatus = getTimelineDisplayStatus(item, nowTime);
   const presentation = TIMELINE_STATUS_PRESENTATION[displayStatus];
   const log = item.activityLog;
-  const timezone =
-    user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   function handleRemoveForToday() {
     if (item!.exceptionId) {
@@ -110,32 +108,6 @@ export function ActivityDetailSheet({
   }
 
   const isTrackingPending = startActivity.isPending || skipActivity.isPending;
-  // Same gates as the timeline row: Start/Complete only once the scheduled time has actually
-  // arrived, Start also cuts off once the window has closed (starting something after it's
-  // already over is meaningless), and Complete has no upper bound — the system never assumes
-  // an outcome just because the planned window passed (including on a MISSED log, which just
-  // means the window passed without being acted on, not a final verdict). Timeless items are
-  // available all day.
-  const isTimeless = !item.startTime || !item.endTime;
-  const timeHasArrived =
-    isTimeless ||
-    combineDateAndTime(item.date, item.startTime as string, timezone).getTime() <=
-      now.getTime();
-  const timeHasEnded =
-    !isTimeless &&
-    combineDateAndEndTime(item.date, item.startTime as string, item.endTime as string, timezone).getTime() <
-      now.getTime();
-  const canStart = log?.status === "PLANNED" && timeHasArrived && !timeHasEnded;
-  const canComplete =
-    log?.status === "IN_PROGRESS" ||
-    log?.status === "MISSED" ||
-    (log?.status === "PLANNED" && timeHasArrived);
-  // Skip has an upper bound Complete doesn't: once actually started, skipping after the window
-  // closed is meaningless — the only honest options left are Complete or leaving it as is.
-  // MISSED is excluded entirely: it's already the system's own "not done" label, so Skip
-  // wouldn't add anything — Complete (if it happened elsewhere) is the only useful action left.
-  const canSkip =
-    (log?.status === "PLANNED" && !timeHasEnded) || (log?.status === "IN_PROGRESS" && !timeHasEnded);
   // Once tracking has moved past PLANNED (started, completed, or skipped), the planned time is
   // historical — editing it would retroactively contradict data already recorded against it.
   const canAdjustTime = !log || log.status === "PLANNED";

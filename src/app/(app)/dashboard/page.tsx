@@ -1,22 +1,28 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { ChevronRight } from "lucide-react";
 import { formatInTimeZone } from "date-fns-tz";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { LoadingSkeletonList } from "@/components/shared/LoadingSkeleton";
+import { ErrorState } from "@/components/shared/ErrorState";
 import { GettingStartedChecklist } from "@/components/shared/GettingStartedChecklist";
-import { DailyTimeline } from "@/features/schedule/components/DailyTimeline";
 import { AdHocActivityDialog } from "@/features/schedule/components/AdHocActivityDialog";
+import { ActivityDetailSheet } from "@/features/schedule/components/ActivityDetailSheet";
+import { CategoryTimeDonut } from "@/features/schedule/components/CategoryTimeDonut";
 import { CurrentActivityCard } from "@/features/tracking/components/CurrentActivityCard";
 import { NextActivityCard } from "@/features/tracking/components/NextActivityCard";
 import { DailySummaryCard } from "@/features/tracking/components/DailySummaryCard";
 import { useTodaySchedule } from "@/features/schedule/hooks/useDaySchedule";
 import { computeDailySummary } from "@/features/schedule/lib/computeDailySummary";
+import { getTimelineDisplayStatus } from "@/features/schedule/lib/timelineStatus";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useNow } from "@/hooks/useNow";
 import { nowTimeInTimeZone, minutesUntil, todayInTimeZone } from "@/lib/datetime/time";
+import type { ScheduleDayItem } from "@/types/schedule";
 
 export default function DashboardPage() {
   return (
@@ -38,23 +44,57 @@ function DashboardContent() {
 
   const { data, isLoading, isError, error, refetch } = useTodaySchedule();
   const items = data?.items;
+  const date = data?.date ?? todayInTimeZone(timezone);
 
-  const current = useMemo(() => items?.find((item) => item.activityLog?.status === "IN_PROGRESS"), [items]);
+  const current = useMemo(() => {
+    if (!items) return undefined;
+    // An activity you've actually tapped Start on always wins the slot. Otherwise, fall back to
+    // whatever timed activity's planned window is active *right now* even if you never tapped
+    // Start — previously this card only ever showed a truly IN_PROGRESS activity, so anything
+    // still PLANNED just sat invisible until its window closed. Timeless items ("anytime today")
+    // are deliberately excluded here — they're always "current" in that sense, which would just
+    // permanently occupy this slot instead of reflecting what's actually happening right now.
+    const inProgress = items.find((item) => item.activityLog?.status === "IN_PROGRESS");
+    if (inProgress) return inProgress;
+    const activeNow = items
+      .filter((item) => item.startTime && item.endTime && getTimelineDisplayStatus(item, nowTime) === "CURRENT")
+      .sort((a, b) => (a.startTime as string).localeCompare(b.startTime as string));
+    return activeNow[0];
+  }, [items, nowTime]);
 
   const next = useMemo(() => {
-    // Timeless items have no "starts in X" to rank by, so they never compete for this slot —
-    // they're always available and show up in the timeline instead.
-    const upcoming =
-      items?.filter(
-        (item) => item.startTime && item.endTime && (!item.activityLog || item.activityLog.status === "PLANNED"),
-      ) ?? [];
+    if (!items) return undefined;
+    // Timeless items have no "starts in X" to rank by, so they never compete for this slot.
+    // Excludes whatever's already claimed the Current slot above, and anything not genuinely
+    // still-upcoming (current/missed/resolved), so the two cards never show the same activity.
+    const upcoming = items.filter(
+      (item) =>
+        item.id !== current?.id &&
+        item.startTime &&
+        item.endTime &&
+        getTimelineDisplayStatus(item, nowTime) === "UPCOMING",
+    );
     if (upcoming.length === 0) return undefined;
     return [...upcoming].sort(
       (a, b) => minutesUntil(a.startTime as string, nowTime) - minutesUntil(b.startTime as string, nowTime),
     )[0];
-  }, [items, nowTime]);
+  }, [items, nowTime, current]);
 
   const summary = useMemo(() => (items ? computeDailySummary(data!.date, items) : undefined), [items, data]);
+
+  // Set by the service worker's notification click handler (worker/index.js), which opens
+  // "/dashboard?logId=<activityLogId>" (frontend-requirements 03 §6-7). The dashboard no longer
+  // lists every activity, so this opens the detail sheet directly for whichever one the
+  // notification was about, even if it isn't the current/next card shown above.
+  const [deepLinkedItem, setDeepLinkedItem] = useState<ScheduleDayItem | null>(null);
+  const consumedDeepLink = useRef(false);
+  useEffect(() => {
+    if (consumedDeepLink.current || !notificationLogId || !items) return;
+    const match = items.find((item) => item.activityLog?.id === notificationLogId);
+    if (!match) return;
+    consumedDeepLink.current = true;
+    setDeepLinkedItem(match);
+  }, [notificationLogId, items]);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
@@ -75,34 +115,38 @@ function DashboardContent() {
 
       <GettingStartedChecklist />
 
-      {current && (
-        <CurrentActivityCard
-          item={current}
-          nowTime={nowTime}
-          date={data?.date ?? todayInTimeZone(timezone)}
-          timezone={timezone}
-        />
-      )}
-      {next && <NextActivityCard item={next} nowTime={nowTime} />}
-      {summary && <DailySummaryCard summary={summary} />}
+      {isLoading && <LoadingSkeletonList count={2} />}
+      {isError && <ErrorState error={error} onRetry={() => refetch()} title="Unable to load today's schedule." />}
 
-      <div>
-        <h2 className="mb-2 text-sm font-medium text-muted-foreground">Today&apos;s Timeline</h2>
-        <DailyTimeline
-          items={items}
-          isLoading={isLoading}
-          isError={isError}
-          error={error}
-          onRetry={() => refetch()}
-          nowTime={nowTime}
-          date={data?.date ?? todayInTimeZone(timezone)}
-          timezone={timezone}
-          emptyAction={{ label: "+ Add Activity", onAction: () => setAdHocOpen(true) }}
-          initialLogId={notificationLogId}
-        />
-      </div>
+      {current && <CurrentActivityCard item={current} nowTime={nowTime} date={date} timezone={timezone} />}
+      {next && <NextActivityCard item={next} nowTime={nowTime} />}
+      {!isLoading && !isError && !current && !next && (
+        <Card>
+          <CardContent className="py-6 text-center text-sm text-muted-foreground">
+            Nothing happening right now. Check the full schedule for what&apos;s planned today.
+          </CardContent>
+        </Card>
+      )}
+      {summary && <DailySummaryCard summary={summary} />}
+      {items && items.length > 0 && <CategoryTimeDonut items={items} />}
+
+      <Button
+        variant="outline"
+        className="w-full justify-between"
+        nativeButton={false}
+        render={<Link href="/schedule" />}
+      >
+        View full schedule
+        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+      </Button>
 
       <AdHocActivityDialog open={adHocOpen} onOpenChange={setAdHocOpen} date={data?.date} />
+
+      <ActivityDetailSheet
+        item={deepLinkedItem}
+        nowTime={nowTime}
+        onOpenChange={(open) => !open && setDeepLinkedItem(null)}
+      />
     </div>
   );
 }

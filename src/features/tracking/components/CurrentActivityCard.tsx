@@ -3,15 +3,22 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { BellRing } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CategoryBadge } from "@/components/shared/CategoryBadge";
 import { ActivityDetailSheet } from "@/features/schedule/components/ActivityDetailSheet";
-import { combineDateAndEndTime, formatDurationMinutes, minutesBetween, minutesUntil } from "@/lib/datetime/time";
+import {
+  combineDateAndEndTime,
+  combineDateAndTime,
+  formatDurationMinutes,
+  minutesBetween,
+  minutesUntil,
+} from "@/lib/datetime/time";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
-import { useSkipActivity } from "../hooks/useTrackingMutations";
+import { useSkipActivity, useStartActivity } from "../hooks/useTrackingMutations";
 import { CompleteActivityDialog } from "./CompleteActivityDialog";
 import { useNow } from "@/hooks/useNow";
+import { useTrackingAvailability } from "@/features/schedule/hooks/useTrackingAvailability";
 import type { ScheduleDayItem } from "@/types/schedule";
 
 interface CurrentActivityCardProps {
@@ -24,31 +31,47 @@ interface CurrentActivityCardProps {
 export function CurrentActivityCard({ item, nowTime, date, timezone }: CurrentActivityCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [completingItem, setCompletingItem] = useState<ScheduleDayItem | null>(null);
+  const startActivity = useStartActivity();
   const skipActivity = useSkipActivity();
   const now = useNow();
-  const isTimeless = !item.startTime || !item.endTime;
+  const logStatus = item.activityLog?.status;
+  const { isTimeless, canStart, canComplete, canSkip } = useTrackingAvailability(item, date, timezone);
+  const isPending = startActivity.isPending || skipActivity.isPending;
+
   const remaining = isTimeless ? null : minutesUntil(item.endTime as string, nowTime);
-  // This card only ever shows an IN_PROGRESS activity (see dashboard/page.tsx) — once you've
-  // actually started it, skipping after its window closed is meaningless, since the only
-  // honest options left are Complete (say how long you actually spent) or leaving it as is.
-  // Uses combineDateAndEndTime (not a plain nowTime/endTime string compare) so an overnight
-  // range like 22:00-03:55 rolls its end onto the next day instead of comparing against a
-  // same-day 03:55 that's already hours in the past the moment the activity starts.
-  const timeHasEnded =
-    !isTimeless &&
-    combineDateAndEndTime(date, item.startTime as string, item.endTime as string, timezone).getTime() <
-      now.getTime();
+  // How far through the planned window we are, for the progress bar — 0 before it starts
+  // (shouldn't normally render then, but clamped just in case), 100 once it's over.
+  const progressPercent = (() => {
+    if (isTimeless || !item.startTime || !item.endTime) return null;
+    const startMs = combineDateAndTime(date, item.startTime, timezone).getTime();
+    const endMs = combineDateAndEndTime(date, item.startTime, item.endTime, timezone).getTime();
+    if (endMs <= startMs) return null;
+    return Math.min(100, Math.max(0, ((now.getTime() - startMs) / (endMs - startMs)) * 100));
+  })();
+
+  function handleAction(action: "start" | "skip") {
+    if (!item.activityLog) return;
+    const mutation = action === "start" ? startActivity : skipActivity;
+    mutation.mutate(item.activityLog.id, {
+      onError: (error) => toast.error(getFriendlyErrorMessage(error)),
+    });
+  }
 
   return (
     <>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Current Activity</CardTitle>
-        </CardHeader>
+      <Card className="overflow-hidden border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card ring-1 ring-primary/20">
         <CardContent className="space-y-3">
+          <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-primary">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+            </span>
+            {logStatus === "IN_PROGRESS" ? "IN PROGRESS" : "HAPPENING NOW"}
+          </div>
+
           <button type="button" className="block w-full text-left" onClick={() => setDetailOpen(true)}>
-            <p className="text-lg font-semibold">{item.activityName}</p>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <p className="text-xl font-bold">{item.activityName}</p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <CategoryBadge name={item.categoryName} color={item.categoryColor} icon={item.categoryIcon} />
               {!isTimeless && (
                 <span>
@@ -58,21 +81,49 @@ export function CurrentActivityCard({ item, nowTime, date, timezone }: CurrentAc
               )}
               {item.alarmEnabled && <BellRing className="h-3.5 w-3.5" aria-label="Alarm enabled" />}
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {isTimeless ? "Anytime today" : `${formatDurationMinutes(remaining as number)} remaining`}
-            </p>
+
+            {isTimeless ? (
+              <p className="mt-1 text-sm text-muted-foreground">Anytime today</p>
+            ) : (
+              <div className="mt-2.5 space-y-1">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/15">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-500"
+                    style={{ width: `${progressPercent ?? 0}%` }}
+                  />
+                </div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  {(remaining as number) >= 0
+                    ? `${formatDurationMinutes(remaining as number)} remaining`
+                    : "Running over the planned time"}
+                </p>
+              </div>
+            )}
           </button>
-          {item.activityLog && (
+
+          {(canStart || canComplete || canSkip) && (
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => setCompletingItem(item)}>
-                End
-              </Button>
-              {!timeHasEnded && (
+              {canStart && (
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={skipActivity.isPending}
-                  onClick={() => skipActivity.mutate(item.activityLog!.id, { onError: (e) => toast.error(getFriendlyErrorMessage(e)) })}
+                  disabled={isPending}
+                  onClick={() => handleAction("start")}
+                >
+                  Start
+                </Button>
+              )}
+              {canComplete && (
+                <Button size="sm" onClick={() => setCompletingItem(item)}>
+                  {logStatus === "IN_PROGRESS" ? "End" : "Complete"}
+                </Button>
+              )}
+              {canSkip && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isPending}
+                  onClick={() => handleAction("skip")}
                 >
                   {isTimeless ? "Close" : "Skip"}
                 </Button>
