@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { DailyTimeline } from "@/features/schedule/components/DailyTimeline";
+import { CategoryTimeDonut } from "@/features/schedule/components/CategoryTimeDonut";
 import { DayNavigator } from "@/features/schedule/components/DayNavigator";
 import { StatusFilter } from "@/features/schedule/components/StatusFilter";
 import { ScheduleEntryList } from "@/features/schedule/components/ScheduleEntryList";
@@ -70,6 +71,15 @@ export default function SchedulePage() {
               </Button>
             </div>
           </div>
+          {!isLoading && !isError && !!data?.items.length && (
+            <p className="text-sm text-muted-foreground">
+              {statusFilter.length > 0 && filteredItems
+                ? `${filteredItems.length} of ${data.items.length} ${data.items.length === 1 ? "activity" : "activities"}`
+                : `${data.items.length} ${data.items.length === 1 ? "activity" : "activities"}`}
+              {date === todayDate ? " today" : ""}
+            </p>
+          )}
+          {!isLoading && !isError && !!data?.items.length && <CategoryTimeDonut items={data.items} />}
           {hidesEverything ? (
             <EmptyState
               icon={FilterX}

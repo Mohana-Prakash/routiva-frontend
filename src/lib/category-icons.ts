@@ -20,6 +20,9 @@ import {
   Palette,
   Camera,
   Star,
+  Flower2,
+  BedDouble,
+  Scroll,
   type LucideIcon,
 } from "lucide-react";
 
@@ -50,6 +53,9 @@ export const CATEGORY_ICONS: Record<string, LucideIcon> = {
   camera: Camera,
   star: Star,
   circle: Circle,
+  "flower-2": Flower2,
+  "bed-double": BedDouble,
+  scroll: Scroll,
 };
 
 export const CATEGORY_ICON_NAMES = Object.keys(CATEGORY_ICONS);

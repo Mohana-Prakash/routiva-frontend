@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { categorySchema, type CategoryFormValues } from "@/lib/validation/category";
 import { CATEGORY_COLOR_PRESETS, CATEGORY_ICON_NAMES, getCategoryIcon } from "@/lib/category-icons";
 import { useCreateCategory, useUpdateCategory } from "../hooks/useCategoryMutations";
+import { useCategories } from "../hooks/useCategories";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { cn } from "@/lib/utils";
 import type { Category } from "@/types/category";
@@ -26,6 +27,14 @@ export function CategoryFormDialog({ open, onOpenChange, category }: CategoryFor
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const isPending = createCategory.isPending || updateCategory.isPending;
+  const { data: categories } = useCategories();
+  // Every other category's color (regardless of active status, matching the backend's own
+  // uniqueness check) — used to steer away from picking a color already in use.
+  const takenColors = new Map(
+    (categories ?? [])
+      .filter((c) => c.id !== category?.id)
+      .map((c) => [c.color.toLowerCase(), c.name] as const),
+  );
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
@@ -34,15 +43,29 @@ export function CategoryFormDialog({ open, onOpenChange, category }: CategoryFor
 
   useEffect(() => {
     if (open) {
+      // For a new category, default to the first preset that isn't already taken (falling
+      // back to the first preset if every single one is in use) rather than always the same
+      // first color, which is exactly how duplicate colors pile up in the first place.
+      const firstFreePreset =
+        CATEGORY_COLOR_PRESETS.find((c) => !takenColors.has(c.toLowerCase())) ?? CATEGORY_COLOR_PRESETS[0];
       form.reset({
         name: category?.name ?? "",
         icon: category?.icon ?? CATEGORY_ICON_NAMES[0],
-        color: category?.color ?? CATEGORY_COLOR_PRESETS[0],
+        color: category?.color ?? firstFreePreset,
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, category, form]);
 
   function onSubmit(values: CategoryFormValues) {
+    // Caught client-side for a clear inline message — the backend also enforces this, but
+    // its rejection surfaces as a generic toast otherwise.
+    const clashingName = takenColors.get(values.color.toLowerCase());
+    if (clashingName) {
+      form.setError("color", { message: `Already used by "${clashingName}" — pick a different color` });
+      return;
+    }
+
     const onSuccess = () => {
       toast.success(isEditing ? "Category updated" : "Category created");
       onOpenChange(false);
@@ -120,21 +143,28 @@ export function CategoryFormDialog({ open, onOpenChange, category }: CategoryFor
                   <FormLabel>Color</FormLabel>
                   <FormControl>
                     <div role="radiogroup" aria-label="Color" className="flex flex-wrap items-center gap-1.5">
-                      {CATEGORY_COLOR_PRESETS.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          role="radio"
-                          aria-checked={field.value === color}
-                          aria-label={color}
-                          onClick={() => field.onChange(color)}
-                          className={cn(
-                            "h-7 w-7 rounded-full ring-offset-2 ring-offset-background transition-shadow",
-                            field.value === color && "ring-2 ring-foreground",
-                          )}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
+                      {CATEGORY_COLOR_PRESETS.map((color) => {
+                        const clashingName = takenColors.get(color.toLowerCase());
+                        const isTakenByOther = !!clashingName && field.value !== color;
+                        return (
+                          <button
+                            key={color}
+                            type="button"
+                            role="radio"
+                            aria-checked={field.value === color}
+                            aria-disabled={isTakenByOther}
+                            aria-label={isTakenByOther ? `${color} — already used by ${clashingName}` : color}
+                            title={isTakenByOther ? `Already used by "${clashingName}"` : undefined}
+                            onClick={() => !isTakenByOther && field.onChange(color)}
+                            className={cn(
+                              "h-7 w-7 rounded-full ring-offset-2 ring-offset-background transition-shadow",
+                              field.value === color && "ring-2 ring-foreground",
+                              isTakenByOther && "cursor-not-allowed opacity-30",
+                            )}
+                            style={{ backgroundColor: color }}
+                          />
+                        );
+                      })}
                       <label className="relative h-7 w-7 overflow-hidden rounded-full border">
                         <span className="sr-only">Custom color</span>
                         <input
