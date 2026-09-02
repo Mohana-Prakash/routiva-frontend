@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { trackingApi } from "@/lib/api/tracking";
-import type { CompleteActivityInput, CorrectActualTimingInput } from "@/types/activity-log";
+import type { CompleteActivityInput, CorrectActualTimingInput, ReclassifyLogInput } from "@/types/activity-log";
 
 /** Any tracking action changes today's rendered schedule (frontend-requirements 05 §15). */
 function invalidateScheduleQueries(queryClient: ReturnType<typeof useQueryClient>) {
@@ -44,6 +44,14 @@ export function useCorrectActualTiming() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ logId, input }: { logId: string; input: CorrectActualTimingInput }) => trackingApi.correct(logId, input),
+    onSuccess: () => invalidateScheduleQueries(queryClient),
+  });
+}
+
+export function useReclassifyActivity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ logId, input }: { logId: string; input: ReclassifyLogInput }) => trackingApi.reclassify(logId, input),
     onSuccess: () => invalidateScheduleQueries(queryClient),
   });
 }

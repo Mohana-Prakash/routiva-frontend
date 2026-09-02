@@ -40,6 +40,7 @@ import { getTimelineDisplayStatus } from "../lib/timelineStatus";
 import { TIMELINE_STATUS_PRESENTATION } from "./timelineStatusPresentation";
 import { AdjustTimeSection } from "./AdjustTimeSection";
 import { CorrectActualTimingSection } from "./CorrectActualTimingSection";
+import { ReclassifyStatusSection } from "./ReclassifyStatusSection";
 import { useTrackingAvailability } from "../hooks/useTrackingAvailability";
 import type { ScheduleDayItem } from "@/types/schedule";
 
@@ -248,6 +249,11 @@ export function ActivityDetailSheet({
                 )}
               </div>
             )}
+
+            {log &&
+              ["COMPLETED", "SKIPPED", "MISSED", "ADJUSTED"].includes(log.status) && (
+                <ReclassifyStatusSection key={item.id} log={log} />
+              )}
 
             {log &&
               (log.status === "COMPLETED" || log.status === "ADJUSTED") && (

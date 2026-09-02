@@ -4,6 +4,7 @@ import type {
   ActivityLogFilters,
   CompleteActivityInput,
   CorrectActualTimingInput,
+  ReclassifyLogInput,
 } from "@/types/activity-log";
 import type { PaginatedResponse, PaginationParams } from "@/types/api";
 
@@ -32,4 +33,7 @@ export const trackingApi = {
 
   correct: (id: string, input: CorrectActualTimingInput) =>
     httpClient.patch<ActivityLog>(`/activity-logs/${id}`, input).then((r) => r.data),
+
+  reclassify: (id: string, input: ReclassifyLogInput) =>
+    httpClient.patch<ActivityLog>(`/activity-logs/${id}/status`, input).then((r) => r.data),
 };

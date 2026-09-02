@@ -41,6 +41,15 @@ export interface CompleteActivityInput {
   actualEnd?: string;
 }
 
+/** Corrects an already-resolved log to a different resolved outcome (e.g. tapped Complete by
+ * mistake, meant Skip). actualStart/actualEnd only apply when status is "COMPLETED"; omitting
+ * them there falls back to the planned window server-side. */
+export interface ReclassifyLogInput {
+  status: "COMPLETED" | "SKIPPED" | "MISSED";
+  actualStart?: string;
+  actualEnd?: string;
+}
+
 export interface ActivityLogFilters {
   from: string;
   to: string;
