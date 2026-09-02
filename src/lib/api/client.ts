@@ -93,14 +93,29 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
   unauthorizedHandler = handler;
 }
 
-let refreshPromise: Promise<boolean> | null = null;
+/**
+ * "invalid" means the backend explicitly rejected the refresh token (expired, revoked, reused)
+ * — the session really is gone, so it's correct to log the user out. "unknown" means the
+ * refresh attempt never got a real answer at all (no response — a network drop, or Render's
+ * free-tier backend cold-starting after being idle, which the app hits often since phones get
+ * backgrounded/locked far more often than every 15 minutes, the access token's TTL). Treating
+ * "unknown" the same as "invalid" was the actual cause of frequent logouts despite the refresh
+ * token itself being good for 30 days (JWT_REFRESH_TTL_DAYS): any transient hiccup while
+ * refreshing was enough to wipe the whole session. Only "invalid" may log the user out.
+ */
+type RefreshOutcome = "refreshed" | "invalid" | "unknown";
 
-async function tryRefreshSession(): Promise<boolean> {
+let refreshPromise: Promise<RefreshOutcome> | null = null;
+
+async function tryRefreshSession(): Promise<RefreshOutcome> {
   if (!refreshPromise) {
     refreshPromise = httpClient
       .post("/auth/refresh")
-      .then(() => true)
-      .catch(() => false)
+      .then((): RefreshOutcome => "refreshed")
+      .catch((err: AxiosError): RefreshOutcome => {
+        const apiError = normalizeError(err);
+        return apiError.status === 401 || apiError.status === 403 ? "invalid" : "unknown";
+      })
       .finally(() => {
         refreshPromise = null;
       });
@@ -117,11 +132,15 @@ httpClient.interceptors.response.use(
 
     if (apiError.status === 401 && originalRequest && !originalRequest._retried && !isAuthEndpoint) {
       originalRequest._retried = true;
-      const refreshed = await tryRefreshSession();
-      if (refreshed) {
+      const outcome = await tryRefreshSession();
+      if (outcome === "refreshed") {
         return httpClient(originalRequest);
       }
-      unauthorizedHandler?.();
+      if (outcome === "invalid") {
+        unauthorizedHandler?.();
+      }
+      // "unknown": leave the session alone — this request just fails (network/server hiccup),
+      // and the next successful request naturally retries the refresh cycle from a clean state.
     }
 
     return Promise.reject(apiError);
