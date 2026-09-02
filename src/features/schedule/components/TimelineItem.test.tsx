@@ -11,10 +11,11 @@ vi.mock("@/lib/api/tracking", () => ({
     start: vi.fn(),
     complete: vi.fn(),
     skip: vi.fn(),
+    markMissed: vi.fn(),
   },
 }));
 
-// Start/Complete/Skip are now gated on both a lower bound (startTime arrived) and an upper
+// Start/Skip/Mark Missed are now gated on both a lower bound (startTime arrived) and an upper
 // bound (endTime not yet passed) relative to the real wall clock. Rather than mocking the
 // clock (which fights userEvent's own timers), these offsets are computed from the actual
 // current UTC time so "arrived but not ended" and "ended" are both deterministic regardless
@@ -78,32 +79,26 @@ describe("TimelineItem", () => {
     vi.mocked(trackingApi.complete).mockReset().mockResolvedValue({} as never);
     vi.mocked(trackingApi.skip).mockReset().mockResolvedValue({} as never);
     vi.mocked(trackingApi.start).mockReset().mockResolvedValue({} as never);
+    vi.mocked(trackingApi.markMissed).mockReset().mockResolvedValue({} as never);
   });
 
-  it("shows Start/Complete/Skip for a planned activity and calls the right API on each", async () => {
+  it("shows Start/Skip for a planned activity and calls the right API on each — Complete never appears here, only in the detail sheet", async () => {
     const user = userEvent.setup();
     renderWithQueryClient(
       <TimelineItem item={plannedItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
     );
 
     expect(screen.getByText("Meditation")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
 
-    // Complete opens a "how long did you actually spend on this" prompt rather than
-    // completing immediately — confirming it with the default (full planned duration) is
-    // what calls the API.
-    await user.click(screen.getByRole("button", { name: "Complete" }));
-    await user.click(await screen.findByRole("button", { name: "Mark Complete" }));
-    await waitFor(() => expect(trackingApi.complete).toHaveBeenCalled());
-    const [completedLogId, completeInput] = vi.mocked(trackingApi.complete).mock.calls[0]!;
-    expect(completedLogId).toBe("log-1");
-    expect(completeInput?.actualStart).toBeTruthy();
-    expect(completeInput?.actualEnd).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Start" }));
+    await waitFor(() => expect(trackingApi.start).toHaveBeenCalledWith("log-1"));
 
     await user.click(screen.getByRole("button", { name: "Skip" }));
     await waitFor(() => expect(trackingApi.skip).toHaveBeenCalledWith("log-1"));
   });
 
-  it('shows "End" instead of "Complete" once the activity is in progress', () => {
+  it("never shows Complete or End regardless of status — completing an activity happens only in the detail sheet", () => {
     const inProgressItem: ScheduleDayItem = {
       ...plannedItem,
       activityLog: { ...plannedItem.activityLog!, status: "IN_PROGRESS", actualStart: new Date().toISOString() },
@@ -112,8 +107,8 @@ describe("TimelineItem", () => {
       <TimelineItem item={inProgressItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
     );
 
-    expect(screen.getByRole("button", { name: "End" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "End" })).not.toBeInTheDocument();
   });
 
   it("calls onSelect with the item when the card body is activated, not when an action button is clicked", async () => {
@@ -145,34 +140,35 @@ describe("TimelineItem", () => {
     );
 
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "End" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument();
     expect(screen.getByText(/Actual: 27m/)).toBeInTheDocument();
   });
 
-  it("hides Start and Complete until the scheduled time arrives, but keeps Skip available", () => {
+  it("hides Start until the scheduled time arrives, but keeps Skip available", () => {
     const futureItem: ScheduleDayItem = { ...plannedItem, startTime: NOT_ARRIVED_START, endTime: NOT_ARRIVED_END };
     renderWithQueryClient(
       <TimelineItem item={futureItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
     );
 
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Skip" })).toBeInTheDocument();
   });
 
-  it("drops Start (but keeps Complete) once the scheduled end time has passed for a still-PLANNED (never started) activity — starting something whose window already closed is meaningless, but Complete stays the honest way to log it", () => {
+  it("shows no action buttons once a still-planned (never started) activity's window has closed — Complete lives only in the detail sheet now", () => {
     const overdueItem: ScheduleDayItem = { ...plannedItem, startTime: ENDED_START, endTime: ENDED_END };
     renderWithQueryClient(
       <TimelineItem item={overdueItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
     );
 
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Complete" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument();
+    // The card itself is also role="button" (for keyboard activation), so assert on the count
+    // rather than absence — exactly one means no action buttons rendered inside it.
+    expect(screen.getAllByRole("button")).toHaveLength(1);
   });
 
-  it("drops Skip (but keeps End) once an in-progress activity's window has closed — skipping something you already started is meaningless", () => {
+  it("offers Mark Missed (not Skip) once an in-progress activity's window has closed", async () => {
+    const user = userEvent.setup();
     const overdueInProgress: ScheduleDayItem = {
       ...plannedItem,
       startTime: ENDED_START,
@@ -183,11 +179,12 @@ describe("TimelineItem", () => {
       <TimelineItem item={overdueInProgress} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
     );
 
-    expect(screen.getByRole("button", { name: "End" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Mark Missed" }));
+    await waitFor(() => expect(trackingApi.markMissed).toHaveBeenCalledWith("log-1"));
   });
 
-  it("offers only Complete (not Start or Skip) once the backend has marked it Missed", () => {
+  it("shows no action buttons once the backend has marked it Missed — Complete lives only in the detail sheet now", () => {
     const missedItem: ScheduleDayItem = {
       ...plannedItem,
       startTime: ENDED_START,
@@ -198,8 +195,8 @@ describe("TimelineItem", () => {
       <TimelineItem item={missedItem} nowTime="18:15" date={TODAY} timezone="UTC" onSelect={() => {}} />,
     );
 
-    expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Complete" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument();
+    // The card itself is also role="button" (for keyboard activation), so assert on the count
+    // rather than absence — exactly one means no action buttons rendered inside it.
+    expect(screen.getAllByRole("button")).toHaveLength(1);
   });
 });
