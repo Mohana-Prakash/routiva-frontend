@@ -27,6 +27,7 @@ import {
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
 import { useAuth } from "@/features/auth/AuthProvider";
 import {
+  useMarkMissedActivity,
   useSkipActivity,
   useStartActivity,
 } from "@/features/tracking/hooks/useTrackingMutations";
@@ -64,12 +65,13 @@ export function ActivityDetailSheet({
 
   const startActivity = useStartActivity();
   const skipActivity = useSkipActivity();
+  const markMissedActivity = useMarkMissedActivity();
   const createException = useCreateScheduleException();
   const deleteException = useDeleteScheduleException();
   const [completingItem, setCompletingItem] = useState<ScheduleDayItem | null>(null);
   const timezone =
     user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const { isTimeless, canStart, canComplete, canSkip } = useTrackingAvailability(item, item?.date ?? "", timezone);
+  const { isTimeless, canStart, canComplete, canSkip, canMarkMissed } = useTrackingAvailability(item, item?.date ?? "", timezone);
 
   if (!item) return null;
 
@@ -107,7 +109,7 @@ export function ActivityDetailSheet({
     );
   }
 
-  const isTrackingPending = startActivity.isPending || skipActivity.isPending;
+  const isTrackingPending = startActivity.isPending || skipActivity.isPending || markMissedActivity.isPending;
   // Once tracking has moved past PLANNED (started, completed, or skipped), the planned time is
   // historical — editing it would retroactively contradict data already recorded against it.
   const canAdjustTime = !log || log.status === "PLANNED";
@@ -194,7 +196,7 @@ export function ActivityDetailSheet({
               </div>
             )}
 
-            {(canStart || canComplete || canSkip) && (
+            {(canStart || canComplete || canSkip || canMarkMissed) && (
               <div className="flex flex-wrap gap-2">
                 {canStart && log && (
                   <Button
@@ -227,6 +229,21 @@ export function ActivityDetailSheet({
                     }
                   >
                     {isTimeless ? "Close" : "Skip"}
+                  </Button>
+                )}
+                {canMarkMissed && log && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-destructive hover:text-destructive"
+                    disabled={isTrackingPending}
+                    onClick={() =>
+                      markMissedActivity.mutate(log.id, {
+                        onError: (e) => toast.error(getFriendlyErrorMessage(e)),
+                      })
+                    }
+                  >
+                    Mark Missed
                   </Button>
                 )}
               </div>

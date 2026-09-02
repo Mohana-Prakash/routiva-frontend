@@ -28,6 +28,8 @@ export const trackingApi = {
 
   skip: (id: string) => httpClient.post<ActivityLog>(`/activity-logs/${id}/skip`).then((r) => r.data),
 
+  markMissed: (id: string) => httpClient.post<ActivityLog>(`/activity-logs/${id}/miss`).then((r) => r.data),
+
   correct: (id: string, input: CorrectActualTimingInput) =>
     httpClient.patch<ActivityLog>(`/activity-logs/${id}`, input).then((r) => r.data),
 };

@@ -10,6 +10,7 @@ import { getTimelineDisplayStatus } from "../lib/timelineStatus";
 import { TIMELINE_STATUS_PRESENTATION } from "./timelineStatusPresentation";
 import { SOURCE_PRESENTATION } from "./sourcePresentation";
 import {
+  useMarkMissedActivity,
   useSkipActivity,
   useStartActivity,
 } from "@/features/tracking/hooks/useTrackingMutations";
@@ -46,18 +47,19 @@ export function TimelineItem({
 
   const startActivity = useStartActivity();
   const skipActivity = useSkipActivity();
+  const markMissedActivity = useMarkMissedActivity();
   const [completingItem, setCompletingItem] = useState<ScheduleDayItem | null>(null);
 
-  function handleAction(action: "start" | "skip") {
+  function handleAction(action: "start" | "skip" | "miss") {
     if (!item.activityLog) return;
-    const mutation = action === "start" ? startActivity : skipActivity;
+    const mutation = action === "start" ? startActivity : action === "skip" ? skipActivity : markMissedActivity;
     mutation.mutate(item.activityLog.id, {
       onError: (error) => toast.error(getFriendlyErrorMessage(error)),
     });
   }
 
-  const isPending = startActivity.isPending || skipActivity.isPending;
-  const { isTimeless, canStart, canComplete, canSkip } = useTrackingAvailability(item, date, timezone);
+  const isPending = startActivity.isPending || skipActivity.isPending || markMissedActivity.isPending;
+  const { isTimeless, canStart, canComplete, canSkip, canMarkMissed } = useTrackingAvailability(item, date, timezone);
 
   return (
     <>
@@ -145,7 +147,7 @@ export function TimelineItem({
             </p>
           )}
 
-          {(canStart || canComplete || canSkip) && (
+          {(canStart || canComplete || canSkip || canMarkMissed) && (
             <div
               className="mt-2.5 flex gap-2"
               onClick={(e) => e.stopPropagation()}
@@ -173,6 +175,17 @@ export function TimelineItem({
                   onClick={() => handleAction("skip")}
                 >
                   {isTimeless ? "Close" : "Skip"}
+                </Button>
+              )}
+              {canMarkMissed && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-destructive hover:text-destructive"
+                  disabled={isPending}
+                  onClick={() => handleAction("miss")}
+                >
+                  Mark Missed
                 </Button>
               )}
             </div>

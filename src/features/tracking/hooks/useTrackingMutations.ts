@@ -32,6 +32,14 @@ export function useSkipActivity() {
   });
 }
 
+export function useMarkMissedActivity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (logId: string) => trackingApi.markMissed(logId),
+    onSuccess: () => invalidateScheduleQueries(queryClient),
+  });
+}
+
 export function useCorrectActualTiming() {
   const queryClient = useQueryClient();
   return useMutation({

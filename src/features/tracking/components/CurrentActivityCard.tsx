@@ -15,7 +15,7 @@ import {
   minutesUntil,
 } from "@/lib/datetime/time";
 import { getFriendlyErrorMessage } from "@/lib/errors/messages";
-import { useSkipActivity, useStartActivity } from "../hooks/useTrackingMutations";
+import { useMarkMissedActivity, useSkipActivity, useStartActivity } from "../hooks/useTrackingMutations";
 import { CompleteActivityDialog } from "./CompleteActivityDialog";
 import { useNow } from "@/hooks/useNow";
 import { useTrackingAvailability } from "@/features/schedule/hooks/useTrackingAvailability";
@@ -33,10 +33,11 @@ export function CurrentActivityCard({ item, nowTime, date, timezone }: CurrentAc
   const [completingItem, setCompletingItem] = useState<ScheduleDayItem | null>(null);
   const startActivity = useStartActivity();
   const skipActivity = useSkipActivity();
+  const markMissedActivity = useMarkMissedActivity();
   const now = useNow();
   const logStatus = item.activityLog?.status;
-  const { isTimeless, canStart, canComplete, canSkip } = useTrackingAvailability(item, date, timezone);
-  const isPending = startActivity.isPending || skipActivity.isPending;
+  const { isTimeless, canStart, canComplete, canSkip, canMarkMissed } = useTrackingAvailability(item, date, timezone);
+  const isPending = startActivity.isPending || skipActivity.isPending || markMissedActivity.isPending;
 
   const remaining = isTimeless ? null : minutesUntil(item.endTime as string, nowTime);
   // How far through the planned window we are, for the progress bar — 0 before it starts
@@ -49,9 +50,9 @@ export function CurrentActivityCard({ item, nowTime, date, timezone }: CurrentAc
     return Math.min(100, Math.max(0, ((now.getTime() - startMs) / (endMs - startMs)) * 100));
   })();
 
-  function handleAction(action: "start" | "skip") {
+  function handleAction(action: "start" | "skip" | "miss") {
     if (!item.activityLog) return;
-    const mutation = action === "start" ? startActivity : skipActivity;
+    const mutation = action === "start" ? startActivity : action === "skip" ? skipActivity : markMissedActivity;
     mutation.mutate(item.activityLog.id, {
       onError: (error) => toast.error(getFriendlyErrorMessage(error)),
     });
@@ -101,7 +102,7 @@ export function CurrentActivityCard({ item, nowTime, date, timezone }: CurrentAc
             )}
           </button>
 
-          {(canStart || canComplete || canSkip) && (
+          {(canStart || canComplete || canSkip || canMarkMissed) && (
             <div className="flex gap-2">
               {canStart && (
                 <Button
@@ -126,6 +127,17 @@ export function CurrentActivityCard({ item, nowTime, date, timezone }: CurrentAc
                   onClick={() => handleAction("skip")}
                 >
                   {isTimeless ? "Close" : "Skip"}
+                </Button>
+              )}
+              {canMarkMissed && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-destructive hover:text-destructive"
+                  disabled={isPending}
+                  onClick={() => handleAction("miss")}
+                >
+                  Mark Missed
                 </Button>
               )}
             </div>
