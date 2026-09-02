@@ -114,6 +114,10 @@ export function ActivityDetailSheet({
   // Once tracking has moved past PLANNED (started, completed, or skipped), the planned time is
   // historical — editing it would retroactively contradict data already recorded against it.
   const canAdjustTime = !log || log.status === "PLANNED";
+  // Once a log is already resolved (e.g. MISSED, which can still take a direct Complete tap),
+  // that same "mark as X" job belongs solely to ReclassifyStatusSection below — otherwise a
+  // resolved log could show two different, inconsistent ways to do the same thing.
+  const isResolved = !!log && ["COMPLETED", "SKIPPED", "MISSED", "ADJUSTED"].includes(log.status);
 
   return (
     <>
@@ -197,7 +201,7 @@ export function ActivityDetailSheet({
               </div>
             )}
 
-            {(canStart || canComplete || canSkip || canMarkMissed) && (
+            {!isResolved && (canStart || canComplete || canSkip || canMarkMissed) && (
               <div className="flex flex-wrap gap-2">
                 {canStart && log && (
                   <Button
@@ -250,10 +254,13 @@ export function ActivityDetailSheet({
               </div>
             )}
 
-            {log &&
-              ["COMPLETED", "SKIPPED", "MISSED", "ADJUSTED"].includes(log.status) && (
-                <ReclassifyStatusSection key={item.id} log={log} />
-              )}
+            {log && isResolved && (
+              <ReclassifyStatusSection
+                key={item.id}
+                log={log}
+                onReclassified={() => onOpenChange(false)}
+              />
+            )}
 
             {log &&
               (log.status === "COMPLETED" || log.status === "ADJUSTED") && (
